@@ -1,45 +1,60 @@
 package main
 
 import (
-	"database/sql"
-	"fmt"
+	"errors"
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
+	"log"
+	"log/slog"
+	"os"
+	"time"
+
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/imDrOne/minecraft-server-manager/config"
-	_ "github.com/jackc/pgx/v5/stdlib"
-	"os"
+)
+
+const (
+	_defaultAttempts = 20
+	_defaultTimeout  = time.Second
 )
 
 func main() {
 	dbConfig := config.New().DB
 	connString := dbConfig.BuildConnectionString("disable", map[string]string{})
 
-	db, err := sql.Open("pgx", connString)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
-		os.Exit(1)
-	}
-	defer db.Close()
+	var (
+		attempts = _defaultAttempts
+		err      error
+		m        *migrate.Migrate
+	)
 
-	driver, err := postgres.WithInstance(db, &postgres.Config{})
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error during PG migration preparing: %v\n", err)
-		os.Exit(1)
+	for attempts > 0 {
+		m, err = migrate.New("file://migrations", connString)
+		if err == nil {
+			break
+		}
+
+		slog.Warn("Migrate: postgres is trying to connect, attempts left: %d", attempts)
+		time.Sleep(_defaultTimeout)
+		attempts--
 	}
 
-	m, err := migrate.NewWithDatabaseInstance(
-		"file://./db/migrations",
-		dbConfig.Name, driver)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error during preparing Migration: %v\n", err)
+	if m == nil || err != nil {
+		slog.Error("Migrate: postgres connect error: %s", err)
 		os.Exit(1)
 	}
-	defer m.Close()
 
 	err = m.Up()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error during UP migration: %v\n", err)
+	defer m.Close()
+	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		slog.Error("Migrate: up error: %s", err)
 		os.Exit(1)
 	}
+
+	if errors.Is(err, migrate.ErrNoChange) {
+		slog.Warn("Migrate: no change")
+		return
+	}
+
+	log.Printf("Migrate: up success")
 }
