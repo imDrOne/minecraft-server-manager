@@ -1,25 +1,21 @@
 package config
 
 import (
+	"flag"
 	"fmt"
-	"github.com/spf13/viper"
-	"log/slog"
+	"github.com/ilyakaznacheev/cleanenv"
 	"net/url"
-)
-
-const (
-	ProfileLocal = "local"
-	ProfileDev   = "dev"
+	"time"
 )
 
 type Config struct {
-	App        `mapstructure:"app"`
-	HTTPServer `mapstructure:"http-server"`
-	DB         `mapstructure:"database"`
+	App        `yaml:"app"`
+	HTTPServer `yaml:"http-server"`
+	DB         `yaml:"database"`
 }
 
 type App struct {
-	Name    string `mapstructure:"name"`
+	Name    string `yaml:"name"`
 	Profile string
 }
 
@@ -28,11 +24,27 @@ type HTTPServer struct {
 }
 
 type DB struct {
-	Host     string `mapstructure:"host"`
-	Port     uint16 `mapstructure:"port"`
-	User     string `mapstructure:"user"`
-	Password string `mapstructure:"password"`
-	Name     string `mapstructure:"name"`
+	Host         string        `yaml:"host" env:"DB_HOST" env-default:"localhost"`
+	Port         uint16        `yaml:"port" env:"DB_PORT" env-default:"port"`
+	User         string        `yaml:"user" env:"DB_USER" env-default:"happy_miner"`
+	Password     string        `yaml:"password" env:"DB_PASSWORD" env-default:"happy_miner"`
+	Name         string        `yaml:"name" env:"DB_NAME" env-default:"server_manager"`
+	MaxPoolSiz   int           `yaml:"max-pool-size" env-default:"2"`
+	ConnAttempts int           `yaml:"conn-attempts" env-default:"3"`
+	ConnTimeout  time.Duration `yaml:"conn-timeout" env-default:"30s"`
+}
+
+func New() *Config {
+	var cfg Config
+	var env string
+	flag.StringVar(&env, "env", "local", "Application profile")
+	flag.Parse()
+
+	if err := cleanenv.ReadConfig(fmt.Sprintf("./config/config.%s.yaml", env), &cfg); err != nil {
+		panic(fmt.Errorf("fatal error config file: %w", err))
+	}
+
+	return &cfg
 }
 
 func (d *DB) BuildConnectionString(sslMode string, additionalParams map[string]string) string {
@@ -56,31 +68,4 @@ func (d *DB) BuildConnectionString(sslMode string, additionalParams map[string]s
 	}
 
 	return connectionString
-}
-
-func New() *Config {
-	viper.AutomaticEnv()
-	viper.SetDefault("app.profile", ProfileLocal)
-
-	if err := viper.BindEnv("app.profile", "APP_PROFILE"); err != nil {
-		panic("can't bind app.profile")
-	}
-
-	profile := viper.GetString("app.profile")
-	slog.Info(fmt.Sprintf("Active profile: %s", profile))
-
-	viper.SetConfigName(fmt.Sprintf("config.%s", profile))
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath("./config")
-
-	if err := viper.ReadInConfig(); err != nil {
-		panic(fmt.Errorf("fatal error config file: %w", err))
-	}
-
-	config := &Config{}
-	if err := viper.Unmarshal(config); err != nil {
-		panic(fmt.Errorf("unable to decode into struct, %v", err))
-	}
-
-	return config
 }
