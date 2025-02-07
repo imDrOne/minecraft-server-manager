@@ -7,5 +7,5 @@ import (
 
 func main() {
 	cfg := config.New()
-	app.Run(cfg)
+	app.MigrateUp(cfg)
 }

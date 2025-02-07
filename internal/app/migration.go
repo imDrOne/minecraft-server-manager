@@ -27,7 +27,7 @@ func MigrateUp(config *config.Config) {
 	)
 
 	for attempts > 0 {
-		m, err = migrate.New("file://migrations", connString)
+		m, err = migrate.New("file://db/migrations", connString)
 		if err == nil {
 			break
 		}

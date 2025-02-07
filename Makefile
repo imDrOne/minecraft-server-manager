@@ -28,7 +28,7 @@ bin-deps:
 .PHONY: migrate-create migrate-up
 
 migrate-create:
-	migrate create -ext sql -dir migrations "$(MIGRATE_NAME)"
+	migrate create -ext sql -dir db/migrations "$(MIGRATE_NAME)"
 
 migrate-up:
 	go run ./cmd/migration
