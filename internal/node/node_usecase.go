@@ -14,7 +14,7 @@ var (
 	ErrNodeAlreadyExists = errors.New("node with this host and port already exists")
 )
 
-type ServiceImpl struct {
+type UseCaseImpl struct {
 	repository Repository
 }
 
@@ -31,11 +31,11 @@ type PagedNodes struct {
 	Meta  pagination.PageMetadata
 }
 
-func NewService(r Repository) *ServiceImpl {
-	return &ServiceImpl{repository: r}
+func NewUseCase(r Repository) *UseCaseImpl {
+	return &UseCaseImpl{repository: r}
 }
 
-func (s ServiceImpl) Save(ctx context.Context, args rawrepo.SaveNodeParams) (rawrepo.Node, error) {
+func (s UseCaseImpl) Save(ctx context.Context, args rawrepo.SaveNodeParams) (rawrepo.Node, error) {
 	node, err := s.repository.Save(ctx, args)
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -47,7 +47,7 @@ func (s ServiceImpl) Save(ctx context.Context, args rawrepo.SaveNodeParams) (raw
 	return node, nil
 }
 
-func (s ServiceImpl) Find(ctx context.Context, payload pagination.PageRequest) (PagedNodes, error) {
+func (s UseCaseImpl) Find(ctx context.Context, payload pagination.PageRequest) (PagedNodes, error) {
 	nodes, err := s.repository.Find(ctx, rawrepo.FindNodesParams{
 		Limit:  int32(payload.Size),
 		Offset: int32(payload.Offset()),

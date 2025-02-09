@@ -14,15 +14,15 @@ import (
 )
 
 type Handler struct {
-	service Service
+	service UseCase
 }
 
-type Service interface {
+type UseCase interface {
 	Save(ctx context.Context, arg rawrepo.SaveNodeParams) (rawrepo.Node, error)
 	Find(ctx context.Context, payload pagination.PageRequest) (node.PagedNodes, error)
 }
 
-func NewHandler(service Service) *Handler {
+func NewHandler(service UseCase) *Handler {
 	return &Handler{service: service}
 }
 

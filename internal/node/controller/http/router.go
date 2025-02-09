@@ -10,10 +10,10 @@ func NewRouter(pool *pgxpool.Pool) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	repo := node.NewRepositoryImpl(pool)
-	service := node.NewService(repo)
-	handler := NewHandler(service)
+	useCase := node.NewUseCase(repo)
+	handler := NewHandler(useCase)
 
-	mux.HandleFunc("POST /nodes/", handler.save)
+	mux.HandleFunc("POST /nodes", handler.save)
 	mux.HandleFunc("POST /nodes/pageable", handler.find)
 
 	return mux
