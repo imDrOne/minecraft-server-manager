@@ -3,11 +3,22 @@
 //   sqlc v1.28.0
 // source: node.sql
 
-package repo
+package repository
 
 import (
 	"context"
 )
+
+const countNode = `-- name: CountNode :one
+SELECT count(*) FROM node
+`
+
+func (q *Queries) CountNode(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countNode)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
 
 const findNodeById = `-- name: FindNodeById :one
 SELECT id, host, port, created_at, updated_at
@@ -65,9 +76,10 @@ func (q *Queries) FindNodes(ctx context.Context, arg FindNodesParams) ([]Node, e
 	return items, nil
 }
 
-const saveNode = `-- name: SaveNode :exec
+const saveNode = `-- name: SaveNode :one
 INSERT INTO node (host, port)
 VALUES ($1, $2)
+RETURNING id, host, port, created_at, updated_at
 `
 
 type SaveNodeParams struct {
@@ -75,9 +87,17 @@ type SaveNodeParams struct {
 	Port int32
 }
 
-func (q *Queries) SaveNode(ctx context.Context, arg SaveNodeParams) error {
-	_, err := q.db.Exec(ctx, saveNode, arg.Host, arg.Port)
-	return err
+func (q *Queries) SaveNode(ctx context.Context, arg SaveNodeParams) (Node, error) {
+	row := q.db.QueryRow(ctx, saveNode, arg.Host, arg.Port)
+	var i Node
+	err := row.Scan(
+		&i.ID,
+		&i.Host,
+		&i.Port,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const updateNodeById = `-- name: UpdateNodeById :exec

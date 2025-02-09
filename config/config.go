@@ -20,7 +20,7 @@ type App struct {
 }
 
 type HTTPServer struct {
-	Port string `mapstructure:"port"`
+	Port string `yaml:"port"`
 }
 
 type DB struct {

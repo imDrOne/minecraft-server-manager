@@ -42,17 +42,11 @@ func MigrateUp(config *config.Config) {
 		os.Exit(1)
 	}
 
-	err = m.Up()
-	defer m.Close()
-	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
+	if err = m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		slog.Error("Migrate: up error: %s", err)
 		os.Exit(1)
 	}
-
-	if errors.Is(err, migrate.ErrNoChange) {
-		slog.Warn("Migrate: no change")
-		return
-	}
+	defer m.Close()
 
 	slog.Info("Migrate: up success")
 }

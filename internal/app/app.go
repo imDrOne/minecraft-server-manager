@@ -1,9 +1,12 @@
 package app
 
 import (
+	"fmt"
 	"github.com/imDrOne/minecraft-server-manager/config"
+	node "github.com/imDrOne/minecraft-server-manager/internal/node/controller/http"
 	"github.com/imDrOne/minecraft-server-manager/pkg/db"
 	"log/slog"
+	"net/http"
 	"os"
 )
 
@@ -17,4 +20,7 @@ func Run(config *config.Config) {
 		slog.Error("%w", err)
 		os.Exit(1)
 	}
+
+	nodeRouter := node.NewRouter(db.Pool)
+	http.ListenAndServe(fmt.Sprintf(":%s", config.HTTPServer.Port), nodeRouter)
 }
