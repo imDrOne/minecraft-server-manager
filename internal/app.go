@@ -1,9 +1,9 @@
-package app
+package internal
 
 import (
 	"fmt"
 	"github.com/imDrOne/minecraft-server-manager/config"
-	node "github.com/imDrOne/minecraft-server-manager/internal/node/controller/http"
+	"github.com/imDrOne/minecraft-server-manager/internal/app/nodes"
 	"github.com/imDrOne/minecraft-server-manager/pkg/db"
 	"log/slog"
 	"net/http"
@@ -17,10 +17,17 @@ func Run(config *config.Config) {
 	defer db.Close()
 
 	if err != nil {
-		slog.Error("%w", err)
+		slog.Error(err.Error())
 		os.Exit(1)
 	}
 
-	nodeRouter := node.NewRouter(db.Pool)
-	http.ListenAndServe(fmt.Sprintf(":%s", config.HTTPServer.Port), nodeRouter)
+	mux := http.NewServeMux()
+	nodeRouter := nodes.NewRouter(db.Pool)
+	mux.Handle("/nodes/", http.StripPrefix("/nodes", nodeRouter))
+
+	server := http.Server{
+		Addr:    fmt.Sprintf(":%s", config.HTTPServer.Port),
+		Handler: mux,
+	}
+	server.ListenAndServe()
 }

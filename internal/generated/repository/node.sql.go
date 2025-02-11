@@ -9,8 +9,25 @@ import (
 	"context"
 )
 
+const checkExistsNode = `-- name: CheckExistsNode :one
+SELECT EXISTS (SELECT 1 FROM node WHERE host = $1 AND port = $2)
+`
+
+type CheckExistsNodeParams struct {
+	Host string
+	Port int32
+}
+
+func (q *Queries) CheckExistsNode(ctx context.Context, arg CheckExistsNodeParams) (bool, error) {
+	row := q.db.QueryRow(ctx, checkExistsNode, arg.Host, arg.Port)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const countNode = `-- name: CountNode :one
-SELECT count(*) FROM node
+SELECT count(*)
+FROM node
 `
 
 func (q *Queries) CountNode(ctx context.Context) (int64, error) {
@@ -79,7 +96,7 @@ func (q *Queries) FindNodes(ctx context.Context, arg FindNodesParams) ([]Node, e
 const saveNode = `-- name: SaveNode :one
 INSERT INTO node (host, port)
 VALUES ($1, $2)
-RETURNING id, host, port, created_at, updated_at
+RETURNING id
 `
 
 type SaveNodeParams struct {
@@ -87,17 +104,11 @@ type SaveNodeParams struct {
 	Port int32
 }
 
-func (q *Queries) SaveNode(ctx context.Context, arg SaveNodeParams) (Node, error) {
+func (q *Queries) SaveNode(ctx context.Context, arg SaveNodeParams) (int64, error) {
 	row := q.db.QueryRow(ctx, saveNode, arg.Host, arg.Port)
-	var i Node
-	err := row.Scan(
-		&i.ID,
-		&i.Host,
-		&i.Port,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
 const updateNodeById = `-- name: UpdateNodeById :exec
