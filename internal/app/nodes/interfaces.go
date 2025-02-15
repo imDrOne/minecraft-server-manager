@@ -10,11 +10,3 @@ type Repository interface {
 	Save(ctx context.Context, createNode func() (*domain.Node, error)) (*domain.Node, error)
 	FindPaginated(ctx context.Context, req pagination.PageRequest) (*domain.PagePaginatedNodes, error)
 }
-
-type NodeHandlers struct {
-	repo Repository
-}
-
-func NewHandlers(repo Repository) NodeHandlers {
-	return NodeHandlers{repo}
-}

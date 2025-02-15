@@ -1,17 +1,20 @@
 package nodes
 
 import (
-	repository "github.com/imDrOne/minecraft-server-manager/internal/infrastructure/nodes"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
 )
 
-func NewRouter(pool *pgxpool.Pool) *http.ServeMux {
+type NodeHandlers struct {
+	repo Repository
+}
+
+func NewHandler(repo Repository) NodeHandlers {
+	return NodeHandlers{repo}
+}
+
+func NewRouter(nodeRepository Repository) *http.ServeMux {
 	router := http.NewServeMux()
-
-	repo := repository.NewPostgresRepo(pool)
-	handler := NewHandlers(repo)
-
+	handler := NewHandler(nodeRepository)
 	router.HandleFunc("POST /", handler.Create)
 	router.HandleFunc("POST /pageable", handler.GetPaginated)
 

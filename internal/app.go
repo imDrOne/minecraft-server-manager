@@ -1,9 +1,9 @@
 package internal
 
 import (
-	"fmt"
 	"github.com/imDrOne/minecraft-server-manager/config"
-	"github.com/imDrOne/minecraft-server-manager/internal/app/nodes"
+	"github.com/imDrOne/minecraft-server-manager/internal/app"
+	nodesRepo "github.com/imDrOne/minecraft-server-manager/internal/infrastructure/nodes"
 	"github.com/imDrOne/minecraft-server-manager/pkg/db"
 	"log/slog"
 	"net/http"
@@ -11,23 +11,33 @@ import (
 )
 
 func Run(config *config.Config) {
-	slog.With("app.Run - postgres.New")
-	connStr := config.DB.BuildConnectionString("disable", map[string]string{})
-	db, err := db.New(connStr, db.MaxPoolSize(config.DB.MaxPoolSiz), db.ConnAttempts(config.DB.ConnAttempts))
-	defer db.Close()
+	connData, err := db.NewConnectionData(
+		config.DB.Host,
+		config.DB.Name,
+		config.DB.User,
+		config.DB.Password,
+		config.DB.Port,
+		false,
+	)
+	if err != nil {
+		slog.Error(err.Error())
+		os.Exit(1)
+	}
+
+	pg, err := db.New(connData, db.MaxPoolSize(config.DB.MaxPoolSiz), db.ConnAttempts(config.DB.ConnAttempts))
+	defer pg.Close()
 
 	if err != nil {
 		slog.Error(err.Error())
 		os.Exit(1)
 	}
 
-	mux := http.NewServeMux()
-	nodeRouter := nodes.NewRouter(db.Pool)
-	mux.Handle("/nodes/", http.StripPrefix("/nodes", nodeRouter))
+	nodeRepo := nodesRepo.NewNodeRepository(pg.Pool)
+	httpServer := app.SetupHttpServer(nodeRepo)
 
 	server := http.Server{
-		Addr:    fmt.Sprintf(":%s", config.HTTPServer.Port),
-		Handler: mux,
+		Addr:    "0.0.0.0:" + config.HTTPServer.Port,
+		Handler: httpServer,
 	}
 	server.ListenAndServe()
 }

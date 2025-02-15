@@ -9,15 +9,15 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type PostgresRepo struct {
+type NodeRepository struct {
 	q *repository.Queries
 }
 
-func NewPostgresRepo(p *pgxpool.Pool) *PostgresRepo {
-	return &PostgresRepo{q: repository.New(p)}
+func NewNodeRepository(p *pgxpool.Pool) *NodeRepository {
+	return &NodeRepository{q: repository.New(p)}
 }
 
-func (r PostgresRepo) Save(ctx context.Context, createNode func() (*domain.Node, error)) (*domain.Node, error) {
+func (r NodeRepository) Save(ctx context.Context, createNode func() (*domain.Node, error)) (*domain.Node, error) {
 	node, err := createNode()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create node: %w", err)
@@ -45,7 +45,7 @@ func (r PostgresRepo) Save(ctx context.Context, createNode func() (*domain.Node,
 	return node.WithId(id)
 }
 
-func (r PostgresRepo) Update(ctx context.Context, id int64, updateNode func(*domain.Node) (*domain.Node, error)) error {
+func (r NodeRepository) Update(ctx context.Context, id int64, updateNode func(*domain.Node) (*domain.Node, error)) error {
 	node, err := r.FindById(ctx, id)
 	if err != nil {
 		return fmt.Errorf("failed to get node: %w", err)
@@ -68,7 +68,7 @@ func (r PostgresRepo) Update(ctx context.Context, id int64, updateNode func(*dom
 	return nil
 }
 
-func (r PostgresRepo) FindPaginated(ctx context.Context, req pagination.PageRequest) (*domain.PagePaginatedNodes, error) {
+func (r NodeRepository) FindPaginated(ctx context.Context, req pagination.PageRequest) (*domain.PagePaginatedNodes, error) {
 	nodes, err := r.Find(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to select pages nodes: %w", err)
@@ -85,7 +85,7 @@ func (r PostgresRepo) FindPaginated(ctx context.Context, req pagination.PageRequ
 	}, nil
 }
 
-func (r PostgresRepo) Find(ctx context.Context, pagination pagination.PageRequest) (*[]domain.Node, error) {
+func (r NodeRepository) Find(ctx context.Context, pagination pagination.PageRequest) (*[]domain.Node, error) {
 	data, err := r.q.FindNodes(ctx, repository.FindNodesParams{
 		Limit:  int32(pagination.Size()),
 		Offset: int32(pagination.Offset()),
@@ -106,7 +106,7 @@ func (r PostgresRepo) Find(ctx context.Context, pagination pagination.PageReques
 	return &nodes, nil
 }
 
-func (r PostgresRepo) FindById(ctx context.Context, id int64) (*domain.Node, error) {
+func (r NodeRepository) FindById(ctx context.Context, id int64) (*domain.Node, error) {
 	data, err := r.q.FindNodeById(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to select node by id %d: %w", id, err)
@@ -120,6 +120,6 @@ func (r PostgresRepo) FindById(ctx context.Context, id int64) (*domain.Node, err
 	return node, nil
 }
 
-func (r PostgresRepo) Count(ctx context.Context) (int64, error) {
+func (r NodeRepository) Count(ctx context.Context) (int64, error) {
 	return r.q.CountNode(ctx)
 }

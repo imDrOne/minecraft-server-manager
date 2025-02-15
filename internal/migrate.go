@@ -1,7 +1,8 @@
-package app
+package internal
 
 import (
 	"errors"
+	"github.com/imDrOne/minecraft-server-manager/pkg/db"
 	"log/slog"
 	"os"
 	"time"
@@ -18,16 +19,27 @@ const (
 )
 
 func MigrateUp(config *config.Config) {
-	connString := config.DB.BuildConnectionString("disable", map[string]string{})
-
 	var (
 		attempts = _defaultAttempts
 		err      error
 		m        *migrate.Migrate
 	)
 
+	connData, err := db.NewConnectionData(
+		config.DB.Host,
+		config.DB.Name,
+		config.DB.User,
+		config.DB.Password,
+		config.DB.Port,
+		false,
+	)
+	if err != nil {
+		slog.Error(err.Error())
+		os.Exit(1)
+	}
+
 	for attempts > 0 {
-		m, err = migrate.New("file://db/migrations", connString)
+		m, err = migrate.New("file://db/migrations", connData.String())
 		if err == nil {
 			break
 		}

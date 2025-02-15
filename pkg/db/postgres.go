@@ -23,7 +23,7 @@ type Postgres struct {
 	Pool *pgxpool.Pool
 }
 
-func New(connUrl string, opts ...Option) (*Postgres, error) {
+func New(connData ConnectionData, opts ...Option) (*Postgres, error) {
 
 	slog.With("db.New")
 	pg := &Postgres{
@@ -36,10 +36,12 @@ func New(connUrl string, opts ...Option) (*Postgres, error) {
 		opt(pg)
 	}
 
-	connConfig, err := pgxpool.ParseConfig(connUrl)
+	connStr := connData.String()
+	connConfig, err := pgxpool.ParseConfig(connStr)
 	if err != nil {
 		return nil, fmt.Errorf("pgxpool.ParseConfig: %w", err)
 	}
+
 	connConfig.MaxConns = int32(pg.maxPoolSize)
 	connConfig.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
 		slog.InfoContext(ctx, "postgres - New - pgxpool.AfterConnect: connected!")
