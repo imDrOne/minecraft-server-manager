@@ -2,8 +2,11 @@ package nodes
 
 import (
 	"encoding/json"
+	"errors"
+	domain "github.com/imDrOne/minecraft-server-manager/internal/domain/nodes"
 	"github.com/imDrOne/minecraft-server-manager/pkg/pagination"
 	"net/http"
+	"strconv"
 )
 
 func (h NodeHandlers) GetPaginated(w http.ResponseWriter, r *http.Request) {
@@ -38,6 +41,45 @@ func (h NodeHandlers) GetPaginated(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(j)
+}
+
+func (h NodeHandlers) GetById(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	if idStr == "" {
+		http.Error(w, "expected id - got empty string", http.StatusBadRequest)
+		return
+	}
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "error during parsing id", http.StatusBadRequest)
+		return
+	}
+
+	node, err := h.repo.FindById(r.Context(), int64(id))
+	if err != nil {
+		msg := err.Error()
+		if errors.Is(err, domain.ErrNodeNotFound) {
+			http.Error(w, msg, http.StatusNotFound)
+		} else {
+			http.Error(w, msg, http.StatusInternalServerError)
+		}
+		return
+	}
+
+	j, err := json.Marshal(NodeResponseDto{
+		Id:        node.Id(),
+		Host:      node.Host(),
+		Port:      int32(node.Port()),
+		CreatedAt: node.CreatedAt(),
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(j)

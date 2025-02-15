@@ -7,6 +7,7 @@ import (
 )
 
 type Repository interface {
-	Save(ctx context.Context, createNode func() (*domain.Node, error)) (*domain.Node, error)
-	FindPaginated(ctx context.Context, req pagination.PageRequest) (*domain.PagePaginatedNodes, error)
+	Save(context.Context, func() (*domain.Node, error)) (*domain.Node, error)
+	FindPaginated(context.Context, pagination.PageRequest) (*domain.PagePaginatedNodes, error)
+	FindById(context.Context, int64) (*domain.Node, error)
 }

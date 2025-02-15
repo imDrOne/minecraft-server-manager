@@ -2,6 +2,8 @@ package nodes
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	domain "github.com/imDrOne/minecraft-server-manager/internal/domain/nodes"
 	"github.com/imDrOne/minecraft-server-manager/internal/generated/repository"
@@ -109,6 +111,9 @@ func (r NodeRepository) Find(ctx context.Context, pagination pagination.PageRequ
 func (r NodeRepository) FindById(ctx context.Context, id int64) (*domain.Node, error) {
 	data, err := r.q.FindNodeById(ctx, id)
 	if err != nil {
+		if errors.As(err, &sql.ErrNoRows) {
+			return nil, domain.ErrNodeNotFound
+		}
 		return nil, fmt.Errorf("failed to select node by id %d: %w", id, err)
 	}
 

@@ -16,6 +16,7 @@ func NewRouter(nodeRepository Repository) *http.ServeMux {
 	router := http.NewServeMux()
 	handler := NewHandler(nodeRepository)
 	router.HandleFunc("POST /", handler.Create)
+	router.HandleFunc("GET /{id}", handler.GetById)
 	router.HandleFunc("POST /pageable", handler.GetPaginated)
 
 	return router
