@@ -2,9 +2,12 @@ package internal
 
 import (
 	"errors"
+	"fmt"
 	"github.com/imDrOne/minecraft-server-manager/pkg/db"
 	"log/slog"
 	"os"
+	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -14,17 +17,16 @@ import (
 )
 
 const (
-	_defaultAttempts = 20
+	_defaultAttempts = 5
 	_defaultTimeout  = time.Second
 )
 
-func MigrateUp(config *config.Config) {
-	var (
-		attempts = _defaultAttempts
-		err      error
-		m        *migrate.Migrate
-	)
+var (
+	_, b, _, _ = runtime.Caller(0)
+	basePath   = filepath.Dir(b)
+)
 
+func MigrateUp(config *config.Config) {
 	connData, err := db.NewConnectionData(
 		config.DB.Host,
 		config.DB.Name,
@@ -38,27 +40,50 @@ func MigrateUp(config *config.Config) {
 		os.Exit(1)
 	}
 
+	if err := MigrateUpWithConnectionString(connData.String()); err != nil {
+		slog.Error(err.Error())
+		os.Exit(1)
+	}
+}
+
+func MigrateUpWithConnectionString(connString string) error {
+	var (
+		attempts = _defaultAttempts
+		err      error
+		m        *migrate.Migrate
+	)
+
 	for attempts > 0 {
-		m, err = migrate.New("file://db/migrations", connData.String())
+		migrationsPath := filepath.Join(basePath, "..", "db", "migrations")
+		m, err = migrate.New(fmt.Sprintf("file://%s", migrationsPath), connString)
 		if err == nil {
 			break
 		}
 
-		slog.Warn("Migrate: postgres is trying to connect, attempts left: %d", attempts)
+		slog.Error("migrate: postgres is trying to connect, attempts left: ", err.Error())
 		time.Sleep(_defaultTimeout)
 		attempts--
 	}
 
 	if m == nil || err != nil {
-		slog.Error("Migrate: postgres connect error: %s", err)
-		os.Exit(1)
+		slog.Error("migrate: postgres connect error: %s", err)
+		return err
 	}
 
 	if err = m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		slog.Error("Migrate: up error: %s", err)
-		os.Exit(1)
+		slog.Error("migrate: up error: %s", err)
+		return err
 	}
-	defer m.Close()
+	defer func() {
+		srcErr, dbErr := m.Close()
+		if srcErr != nil {
+			slog.Error("migrate: error during closing src: %s", srcErr.Error())
+		}
+		if dbErr != nil {
+			slog.Error("migrate: error during closing db: %s", dbErr.Error())
+		}
+	}()
 
 	slog.Info("Migrate: up success")
+	return nil
 }
