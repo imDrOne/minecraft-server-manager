@@ -56,7 +56,7 @@ func NewWithConnectionString(connStr string, opts ...Option) (*Postgres, error) 
 			break
 		}
 
-		slog.Warn("postgres is trying to connect, attempts left: %d", pg.connAttempts)
+		slog.Warn("postgres is trying to connect", slog.Int("attempts_left", pg.connAttempts))
 		time.Sleep(pg.connTimeout)
 		pg.connAttempts--
 	}

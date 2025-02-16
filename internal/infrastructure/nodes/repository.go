@@ -111,7 +111,7 @@ func (r NodeRepository) Find(ctx context.Context, pagination pagination.PageRequ
 func (r NodeRepository) FindById(ctx context.Context, id int64) (*domain.Node, error) {
 	data, err := r.q.FindNodeById(ctx, id)
 	if err != nil {
-		if errors.As(err, &sql.ErrNoRows) {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, domain.ErrNodeNotFound
 		}
 		return nil, fmt.Errorf("failed to select node by id %d: %w", id, err)

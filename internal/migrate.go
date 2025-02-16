@@ -60,27 +60,29 @@ func MigrateUpWithConnectionString(connString string) error {
 			break
 		}
 
-		slog.Error("migrate: postgres is trying to connect, attempts left: ", err.Error())
+		slog.Warn(
+			"migrate: postgres is trying to connect",
+			slog.Int("attempts_left", attempts),
+			slog.String("error", err.Error()))
 		time.Sleep(_defaultTimeout)
 		attempts--
 	}
 
 	if m == nil || err != nil {
-		slog.Error("migrate: postgres connect error: %s", err)
 		return err
 	}
 
 	if err = m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		slog.Error("migrate: up error: %s", err)
+		slog.Error("migrate: up error", slog.String("error", err.Error()))
 		return err
 	}
 	defer func() {
 		srcErr, dbErr := m.Close()
 		if srcErr != nil {
-			slog.Error("migrate: error during closing src: %s", srcErr.Error())
+			slog.Error("migrate: error during closing src", slog.String("error", err.Error()))
 		}
 		if dbErr != nil {
-			slog.Error("migrate: error during closing db: %s", dbErr.Error())
+			slog.Error("migrate: error during closing db", slog.String("error", err.Error()))
 		}
 	}()
 
