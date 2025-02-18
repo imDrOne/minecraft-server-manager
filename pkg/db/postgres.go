@@ -23,9 +23,12 @@ type Postgres struct {
 	Pool *pgxpool.Pool
 }
 
-func New(connUrl string, opts ...Option) (*Postgres, error) {
+func New(connData ConnectionData, opts ...Option) (*Postgres, error) {
+	connStr := connData.String()
+	return NewWithConnectionString(connStr, opts...)
+}
 
-	slog.With("db.New")
+func NewWithConnectionString(connStr string, opts ...Option) (*Postgres, error) {
 	pg := &Postgres{
 		maxPoolSize:  _defaultMaxPoolSize,
 		connAttempts: _defaultConnAttempts,
@@ -36,10 +39,11 @@ func New(connUrl string, opts ...Option) (*Postgres, error) {
 		opt(pg)
 	}
 
-	connConfig, err := pgxpool.ParseConfig(connUrl)
+	connConfig, err := pgxpool.ParseConfig(connStr)
 	if err != nil {
 		return nil, fmt.Errorf("pgxpool.ParseConfig: %w", err)
 	}
+
 	connConfig.MaxConns = int32(pg.maxPoolSize)
 	connConfig.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
 		slog.InfoContext(ctx, "postgres - New - pgxpool.AfterConnect: connected!")
@@ -52,7 +56,7 @@ func New(connUrl string, opts ...Option) (*Postgres, error) {
 			break
 		}
 
-		slog.Warn("Postgres is trying to connect, attempts left: %d", pg.connAttempts)
+		slog.Warn("postgres is trying to connect", slog.Int("attempts_left", pg.connAttempts))
 		time.Sleep(pg.connTimeout)
 		pg.connAttempts--
 	}
@@ -63,6 +67,7 @@ func New(connUrl string, opts ...Option) (*Postgres, error) {
 	}
 
 	if err = pg.Pool.Ping(context.Background()); err != nil {
+		slog.Error("ping error")
 		return nil, err
 	}
 	return pg, nil
