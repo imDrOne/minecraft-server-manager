@@ -16,19 +16,12 @@ up-docker:
 down-docker:
 	docker-compose stop
 
-# Install external tools
-.PHONY: bin-deps
-
-bin-deps:
-	go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
-	go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
-
 # Migrations
 
 .PHONY: migrate-create migrate-up
 
 migrate-create:
-	migrate create -ext sql -dir db/migrations "$(MIGRATE_NAME)"
+	go tool migrate create -ext sql -dir db/migrations "$(MIGRATE_NAME)"
 
 migrate-up:
 	go run ./cmd/migration
@@ -37,5 +30,5 @@ migrate-up:
 .PHONY: sqlc-generate
 
 sqlc-generate:
-	sqlc generate -f sqlc.yaml
+	go tool sqlc generate -f sqlc.yaml
 
