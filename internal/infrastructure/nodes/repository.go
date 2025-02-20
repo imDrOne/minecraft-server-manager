@@ -11,8 +11,18 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+//go:generate go tool mockgen -destination mock_test.go -package nodes . NodeQueries
+type NodeQueries interface {
+	CheckExistsNode(context.Context, repository.CheckExistsNodeParams) (bool, error)
+	SaveNode(context.Context, repository.SaveNodeParams) (int64, error)
+	UpdateNodeById(context.Context, repository.UpdateNodeByIdParams) error
+	FindNodeById(context.Context, int64) (repository.Node, error)
+	FindNodes(context.Context, repository.FindNodesParams) ([]repository.Node, error)
+	CountNode(context.Context) (int64, error)
+}
+
 type NodeRepository struct {
-	q *repository.Queries
+	q NodeQueries
 }
 
 func NewNodeRepository(p *pgxpool.Pool) *NodeRepository {
