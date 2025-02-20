@@ -10,19 +10,20 @@ import (
 	"testing"
 )
 
-type ControllerFinishFinish func()
+type ControllerFinish func()
+type MockNodeQueriesProvider func(*testing.T) (*MockNodeQueries, ControllerFinish)
 
 type NodeRepositoryTestSuite struct {
 	suite.Suite
 	ctx                     context.Context
-	mockNodeQueriesProvider func(*testing.T) (*MockNodeQueries, ControllerFinishFinish)
+	mockNodeQueriesProvider MockNodeQueriesProvider
 }
 
 var errInternalSql = errors.New("DB error")
 
 func (suite *NodeRepositoryTestSuite) SetupTest() {
 	suite.ctx = context.Background()
-	suite.mockNodeQueriesProvider = func(t *testing.T) (*MockNodeQueries, ControllerFinishFinish) {
+	suite.mockNodeQueriesProvider = func(t *testing.T) (*MockNodeQueries, ControllerFinish) {
 		ctrl := gomock.NewController(t)
 		mockQueries := NewMockNodeQueries(ctrl)
 		return mockQueries, ctrl.Finish
@@ -60,11 +61,11 @@ func (suite *NodeRepositoryTestSuite) TestNodeRepository_Save_ErrorOnSaveNode() 
 
 	mockQueries.EXPECT().
 		SaveNode(suite.ctx, gomock.Any()).
-		Return(int64(0), errors.New("DB error"))
+		Return(int64(0), errInternalSql)
 
 	_, err := repo.Save(suite.ctx, createNode)
 	require.Error(suite.T(), err)
-	require.Contains(suite.T(), errInternalSql, "failed to insert node")
+	require.Contains(suite.T(), err.Error(), "failed to insert node")
 }
 
 func TestRunNodeRepositorySuite(t *testing.T) {
