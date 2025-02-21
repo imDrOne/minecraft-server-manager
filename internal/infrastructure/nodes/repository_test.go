@@ -21,6 +21,7 @@ type NodeRepositoryTestSuite struct {
 	suite.Suite
 	ctx                     context.Context
 	mockNodeQueriesProvider MockNodeQueriesProvider
+	repoSupplier            func(*MockNodeQueries) *NodeRepository
 }
 
 var errInternalSql = errors.New("DB error")
@@ -32,20 +33,22 @@ func (suite *NodeRepositoryTestSuite) SetupTest() {
 		mockQueries := NewMockNodeQueries(ctrl)
 		return mockQueries, ctrl.Finish
 	}
+	suite.repoSupplier = func(queries *MockNodeQueries) *NodeRepository {
+		return &NodeRepository{q: queries}
+	}
 }
+
+var createNode = func() (*domain.Node, error) { return &domain.Node{}, nil }
 
 func (suite *NodeRepositoryTestSuite) TestNodeRepository_Save_ErrorOnCheckExists() {
 	mockQueries, finish := suite.mockNodeQueriesProvider(suite.T())
 	defer finish()
 
-	repo := NodeRepository{q: mockQueries}
-	createNode := func() (*domain.Node, error) { return &domain.Node{}, nil }
-
 	mockQueries.EXPECT().
 		CheckExistsNode(suite.ctx, gomock.Any()).
 		Return(false, errInternalSql)
 
-	_, err := repo.Save(suite.ctx, createNode)
+	_, err := suite.repoSupplier(mockQueries).Save(suite.ctx, createNode)
 	require.Error(suite.T(), err)
 	require.Contains(suite.T(), err.Error(), "failed to check node exist")
 }
@@ -53,9 +56,6 @@ func (suite *NodeRepositoryTestSuite) TestNodeRepository_Save_ErrorOnCheckExists
 func (suite *NodeRepositoryTestSuite) TestNodeRepository_Save_ErrorOnSaveNode() {
 	mockQueries, finish := suite.mockNodeQueriesProvider(suite.T())
 	defer finish()
-
-	repo := NodeRepository{q: mockQueries}
-	createNode := func() (*domain.Node, error) { return &domain.Node{}, nil }
 
 	mockQueries.EXPECT().
 		CheckExistsNode(suite.ctx, gomock.Any()).
@@ -65,7 +65,7 @@ func (suite *NodeRepositoryTestSuite) TestNodeRepository_Save_ErrorOnSaveNode() 
 		SaveNode(suite.ctx, gomock.Any()).
 		Return(int64(0), errInternalSql)
 
-	_, err := repo.Save(suite.ctx, createNode)
+	_, err := suite.repoSupplier(mockQueries).Save(suite.ctx, createNode)
 	require.Error(suite.T(), err)
 	require.Contains(suite.T(), err.Error(), "failed to insert node")
 }
@@ -75,25 +75,23 @@ func (suite *NodeRepositoryTestSuite) TestNodeRepository_Save_ErrorOnCreateNode(
 	mockQueries, finish := suite.mockNodeQueriesProvider(suite.T())
 	defer finish()
 
-	repo := NodeRepository{q: mockQueries}
 	createNode := func() (*domain.Node, error) { return nil, nodeCreateErr }
-	_, err := repo.Save(suite.ctx, createNode)
+	_, err := suite.repoSupplier(mockQueries).Save(suite.ctx, createNode)
 	require.Error(suite.T(), err)
 	require.Contains(suite.T(), err.Error(), nodeCreateErr.Error())
 }
+
+var updateNode = func(*domain.Node) (*domain.Node, error) { return &domain.Node{}, nil }
 
 func (suite *NodeRepositoryTestSuite) TestNodeRepository_Update_ErrorOnFindById() {
 	mockQueries, finish := suite.mockNodeQueriesProvider(suite.T())
 	defer finish()
 
-	repo := NodeRepository{q: mockQueries}
-	updateNode := func(*domain.Node) (*domain.Node, error) { return &domain.Node{}, nil }
-
 	mockQueries.EXPECT().
 		FindNodeById(suite.ctx, gomock.Any()).
 		Return(repository.Node{}, errInternalSql)
 
-	err := repo.Update(suite.ctx, 10, updateNode)
+	err := suite.repoSupplier(mockQueries).Update(suite.ctx, 10, updateNode)
 	require.Error(suite.T(), err)
 	require.Contains(suite.T(), err.Error(), "failed to get node")
 }
@@ -101,9 +99,6 @@ func (suite *NodeRepositoryTestSuite) TestNodeRepository_Update_ErrorOnFindById(
 func (suite *NodeRepositoryTestSuite) TestNodeRepository_Update_ErrorOnUpdate() {
 	mockQueries, finish := suite.mockNodeQueriesProvider(suite.T())
 	defer finish()
-
-	repo := NodeRepository{q: mockQueries}
-	updateNode := func(*domain.Node) (*domain.Node, error) { return &domain.Node{}, nil }
 
 	mockQueries.EXPECT().
 		FindNodeById(suite.ctx, gomock.Any()).
@@ -113,7 +108,7 @@ func (suite *NodeRepositoryTestSuite) TestNodeRepository_Update_ErrorOnUpdate() 
 		UpdateNodeById(suite.ctx, gomock.Any()).
 		Return(errInternalSql)
 
-	err := repo.Update(suite.ctx, 10, updateNode)
+	err := suite.repoSupplier(mockQueries).Update(suite.ctx, 10, updateNode)
 	require.Error(suite.T(), err)
 	require.Contains(suite.T(), err.Error(), "failed to update node query")
 }
@@ -123,14 +118,13 @@ func (suite *NodeRepositoryTestSuite) TestNodeRepository_Update_ErrorOnUpdateCal
 	mockQueries, finish := suite.mockNodeQueriesProvider(suite.T())
 	defer finish()
 
-	repo := NodeRepository{q: mockQueries}
 	updateNode := func(*domain.Node) (*domain.Node, error) { return nil, nodeUpdateErr }
 
 	mockQueries.EXPECT().
 		FindNodeById(suite.ctx, gomock.Any()).
 		Return(repository.Node{Host: "test.t", Port: 64676}, nil)
 
-	err := repo.Update(suite.ctx, 10, updateNode)
+	err := suite.repoSupplier(mockQueries).Update(suite.ctx, 10, updateNode)
 	require.Error(suite.T(), err)
 	require.Contains(suite.T(), err.Error(), "error node update")
 }
@@ -140,12 +134,11 @@ func (suite *NodeRepositoryTestSuite) TestNodeRepository_Find_ErrorOnFind() {
 	mockQueries, finish := suite.mockNodeQueriesProvider(suite.T())
 	defer finish()
 
-	repo := NodeRepository{q: mockQueries}
 	mockQueries.EXPECT().
 		FindNodes(suite.ctx, gomock.Any()).
 		Return(nil, nodesFindErr)
 
-	_, err := repo.Find(suite.ctx, pagination.PageRequest{})
+	_, err := suite.repoSupplier(mockQueries).Find(suite.ctx, pagination.PageRequest{})
 	require.Error(suite.T(), err)
 	require.Contains(suite.T(), err.Error(), "failed to select nodes")
 }
@@ -155,7 +148,6 @@ func (suite *NodeRepositoryTestSuite) TestNodeRepository_Find_ErrorOnMapping() {
 	defer finish()
 
 	failedId := int64(1740170404993)
-	repo := NodeRepository{q: mockQueries}
 	nodes := []repository.Node{
 		{
 			ID:   1740170404992,
@@ -173,7 +165,7 @@ func (suite *NodeRepositoryTestSuite) TestNodeRepository_Find_ErrorOnMapping() {
 		FindNodes(suite.ctx, gomock.Any()).
 		Return(nodes, nil)
 
-	_, err := repo.Find(suite.ctx, pagination.PageRequest{})
+	_, err := suite.repoSupplier(mockQueries).Find(suite.ctx, pagination.PageRequest{})
 	require.Error(suite.T(), err)
 	require.Contains(suite.T(), err.Error(), fmt.Sprintf("failed to map node by id %d", failedId))
 }
@@ -184,12 +176,11 @@ func (suite *NodeRepositoryTestSuite) TestNodeRepository_FindById_ErrorOnFind() 
 	mockQueries, finish := suite.mockNodeQueriesProvider(suite.T())
 	defer finish()
 
-	repo := NodeRepository{q: mockQueries}
 	mockQueries.EXPECT().
 		FindNodeById(suite.ctx, gomock.Any()).
 		Return(repository.Node{}, errOnFindById)
 
-	_, err := repo.FindById(suite.ctx, failedId)
+	_, err := suite.repoSupplier(mockQueries).FindById(suite.ctx, failedId)
 	require.Error(suite.T(), err)
 	require.Contains(suite.T(), err.Error(), fmt.Sprintf("failed to select node by id %d", failedId))
 }
@@ -198,12 +189,11 @@ func (suite *NodeRepositoryTestSuite) TestNodeRepository_FindById_NotFound() {
 	mockQueries, finish := suite.mockNodeQueriesProvider(suite.T())
 	defer finish()
 
-	repo := NodeRepository{q: mockQueries}
 	mockQueries.EXPECT().
 		FindNodeById(suite.ctx, gomock.Any()).
 		Return(repository.Node{}, sql.ErrNoRows)
 
-	_, err := repo.FindById(suite.ctx, 1740171226)
+	_, err := suite.repoSupplier(mockQueries).FindById(suite.ctx, 1740171226)
 	require.Error(suite.T(), err)
 	require.EqualError(suite.T(), err, domain.ErrNodeNotFound.Error())
 }
