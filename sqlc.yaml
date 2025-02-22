@@ -8,3 +8,11 @@ sql:
         package: "repository"
         out: "internal/generated/repository"
         sql_package: "pgx/v5"
+  - engine: "postgresql"
+    queries: "db/query/test"
+    schema: "db/migrations"
+    gen:
+      go:
+        package: "repository"
+        out: "integration_tests/generated/seeds"
+        sql_package: "pgx/v5"

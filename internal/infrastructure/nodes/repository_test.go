@@ -14,8 +14,10 @@ import (
 	"testing"
 )
 
-type ControllerFinish func()
-type MockNodeQueriesProvider func(*testing.T) (*MockNodeQueries, ControllerFinish)
+type (
+	ControllerFinish        func()
+	MockNodeQueriesProvider func(*testing.T) (*MockNodeQueries, ControllerFinish)
+)
 
 type NodeRepositoryTestSuite struct {
 	suite.Suite
@@ -23,8 +25,6 @@ type NodeRepositoryTestSuite struct {
 	mockNodeQueriesProvider MockNodeQueriesProvider
 	repoSupplier            func(*MockNodeQueries) *NodeRepository
 }
-
-var errInternalSql = errors.New("DB error")
 
 func (suite *NodeRepositoryTestSuite) SetupTest() {
 	suite.ctx = context.Background()
@@ -38,7 +38,12 @@ func (suite *NodeRepositoryTestSuite) SetupTest() {
 	}
 }
 
-var createNode = func() (*domain.Node, error) { return &domain.Node{}, nil }
+var errInternalSql = errors.New("DB error")
+
+var (
+	createNode = func() (*domain.Node, error) { return &domain.Node{}, nil }
+	updateNode = func(*domain.Node) (*domain.Node, error) { return &domain.Node{}, nil }
+)
 
 func (suite *NodeRepositoryTestSuite) TestNodeRepository_Save_ErrorOnCheckExists() {
 	mockQueries, finish := suite.mockNodeQueriesProvider(suite.T())
@@ -51,6 +56,19 @@ func (suite *NodeRepositoryTestSuite) TestNodeRepository_Save_ErrorOnCheckExists
 	_, err := suite.repoSupplier(mockQueries).Save(suite.ctx, createNode)
 	require.Error(suite.T(), err)
 	require.Contains(suite.T(), err.Error(), "failed to check node exist")
+}
+
+func (suite *NodeRepositoryTestSuite) TestNodeRepository_Save_AlreadyExists() {
+	mockQueries, finish := suite.mockNodeQueriesProvider(suite.T())
+	defer finish()
+
+	mockQueries.EXPECT().
+		CheckExistsNode(suite.ctx, gomock.Any()).
+		Return(true, nil)
+
+	_, err := suite.repoSupplier(mockQueries).Save(suite.ctx, createNode)
+	require.Error(suite.T(), err)
+	require.EqualError(suite.T(), err, domain.ErrNodeAlreadyExist.Error())
 }
 
 func (suite *NodeRepositoryTestSuite) TestNodeRepository_Save_ErrorOnSaveNode() {
@@ -80,8 +98,6 @@ func (suite *NodeRepositoryTestSuite) TestNodeRepository_Save_ErrorOnCreateNode(
 	require.Error(suite.T(), err)
 	require.Contains(suite.T(), err.Error(), nodeCreateErr.Error())
 }
-
-var updateNode = func(*domain.Node) (*domain.Node, error) { return &domain.Node{}, nil }
 
 func (suite *NodeRepositoryTestSuite) TestNodeRepository_Update_ErrorOnFindById() {
 	mockQueries, finish := suite.mockNodeQueriesProvider(suite.T())
