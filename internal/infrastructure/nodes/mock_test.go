@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	repository "github.com/imDrOne/minecraft-server-manager/internal/generated/repository"
+	repository "github.com/imDrOne/minecraft-server-manager/internal/generated/query"
 	gomock "go.uber.org/mock/gomock"
 )
 

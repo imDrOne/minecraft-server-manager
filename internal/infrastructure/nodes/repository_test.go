@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	domain "github.com/imDrOne/minecraft-server-manager/internal/domain/nodes"
-	"github.com/imDrOne/minecraft-server-manager/internal/generated/repository"
+	"github.com/imDrOne/minecraft-server-manager/internal/generated/query"
 	"github.com/imDrOne/minecraft-server-manager/pkg/pagination"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
@@ -82,7 +82,7 @@ func (suite *NodeRepositoryTestSuite) TestNodeRepository_Save_ErrorOnSaveNode() 
 
 	mockQueries.EXPECT().
 		SaveNode(suite.ctx, gomock.Any()).
-		Return(repository.SaveNodeRow{
+		Return(query.SaveNodeRow{
 			ID:        0,
 			CreatedAt: pgtype.Timestamp{},
 		}, errInternalSql)
@@ -109,7 +109,7 @@ func (suite *NodeRepositoryTestSuite) TestNodeRepository_Update_ErrorOnFindById(
 
 	mockQueries.EXPECT().
 		FindNodeById(suite.ctx, gomock.Any()).
-		Return(repository.Node{}, errInternalSql)
+		Return(query.Node{}, errInternalSql)
 
 	err := suite.repoSupplier(mockQueries).Update(suite.ctx, 10, updateNode)
 	require.Error(suite.T(), err)
@@ -122,7 +122,7 @@ func (suite *NodeRepositoryTestSuite) TestNodeRepository_Update_ErrorOnUpdate() 
 
 	mockQueries.EXPECT().
 		FindNodeById(suite.ctx, gomock.Any()).
-		Return(repository.Node{Host: "test.t", Port: 64676}, nil)
+		Return(query.Node{Host: "test.t", Port: 64676}, nil)
 
 	mockQueries.EXPECT().
 		UpdateNodeById(suite.ctx, gomock.Any()).
@@ -142,7 +142,7 @@ func (suite *NodeRepositoryTestSuite) TestNodeRepository_Update_ErrorOnUpdateCal
 
 	mockQueries.EXPECT().
 		FindNodeById(suite.ctx, gomock.Any()).
-		Return(repository.Node{Host: "test.t", Port: 64676}, nil)
+		Return(query.Node{Host: "test.t", Port: 64676}, nil)
 
 	err := suite.repoSupplier(mockQueries).Update(suite.ctx, 10, updateNode)
 	require.Error(suite.T(), err)
@@ -168,7 +168,7 @@ func (suite *NodeRepositoryTestSuite) TestNodeRepository_Find_ErrorOnMapping() {
 	defer finish()
 
 	failedId := int64(1740170404993)
-	nodes := []repository.Node{
+	nodes := []query.Node{
 		{
 			ID:   1740170404992,
 			Host: "test.t",
@@ -198,7 +198,7 @@ func (suite *NodeRepositoryTestSuite) TestNodeRepository_FindById_ErrorOnFind() 
 
 	mockQueries.EXPECT().
 		FindNodeById(suite.ctx, gomock.Any()).
-		Return(repository.Node{}, errOnFindById)
+		Return(query.Node{}, errOnFindById)
 
 	_, err := suite.repoSupplier(mockQueries).FindById(suite.ctx, failedId)
 	require.Error(suite.T(), err)
@@ -211,7 +211,7 @@ func (suite *NodeRepositoryTestSuite) TestNodeRepository_FindById_NotFound() {
 
 	mockQueries.EXPECT().
 		FindNodeById(suite.ctx, gomock.Any()).
-		Return(repository.Node{}, sql.ErrNoRows)
+		Return(query.Node{}, sql.ErrNoRows)
 
 	_, err := suite.repoSupplier(mockQueries).FindById(suite.ctx, 1740171226)
 	require.Error(suite.T(), err)

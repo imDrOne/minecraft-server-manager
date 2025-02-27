@@ -2,7 +2,7 @@ package nodes
 
 import (
 	"fmt"
-	"github.com/imDrOne/minecraft-server-manager/internal/generated/repository"
+	"github.com/imDrOne/minecraft-server-manager/internal/generated/query"
 	"github.com/jackc/pgx/v5/pgtype"
 	"testing"
 	"time"
@@ -65,7 +65,7 @@ func TestWithId(t *testing.T) {
 	node, _ := NewNode(0, "localhost", 50000, time.Time{})
 	newID := int64(42)
 	newCreatedAt := time.Now()
-	newNode := node.WithDBGeneratedValues(repository.SaveNodeRow{
+	newNode := node.WithDBGeneratedValues(query.SaveNodeRow{
 		ID: newID,
 		CreatedAt: pgtype.Timestamp{
 			Time:  newCreatedAt,
@@ -83,7 +83,7 @@ func TestWithId(t *testing.T) {
 }
 
 func TestFromDbModel(t *testing.T) {
-	dbNode := repository.Node{ID: 10, Host: "dbhost", Port: 50001}
+	dbNode := query.Node{ID: 10, Host: "dbhost", Port: 50001}
 	node, err := FromDbModel(dbNode)
 
 	if err != nil {

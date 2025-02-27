@@ -3,7 +3,7 @@ package nodes
 import (
 	"errors"
 	"fmt"
-	"github.com/imDrOne/minecraft-server-manager/internal/generated/repository"
+	"github.com/imDrOne/minecraft-server-manager/internal/generated/query"
 	"github.com/imDrOne/minecraft-server-manager/pkg/pagination"
 	"time"
 )
@@ -36,11 +36,11 @@ func NewNode(id int64, host string, port uint, createdAt time.Time) (*Node, erro
 func CreateNode(host string, port uint) (*Node, error) {
 	return NewNode(0, host, port, time.Time{})
 }
-func FromDbModel(n repository.Node) (*Node, error) {
+func FromDbModel(n query.Node) (*Node, error) {
 	return NewNode(n.ID, n.Host, uint(n.Port), n.CreatedAt.Time)
 }
 
-func (n *Node) WithDBGeneratedValues(row repository.SaveNodeRow) *Node {
+func (n *Node) WithDBGeneratedValues(row query.SaveNodeRow) *Node {
 	return &Node{
 		id:        row.ID,
 		host:      n.host,

@@ -3,7 +3,7 @@ package connections
 import (
 	"errors"
 	"fmt"
-	"github.com/imDrOne/minecraft-server-manager/internal/generated/repository"
+	"github.com/imDrOne/minecraft-server-manager/internal/generated/query"
 	"golang.org/x/crypto/ssh"
 	"regexp"
 	"time"
@@ -45,7 +45,7 @@ func (c *Connection) CreatedAt() time.Time {
 	return c.createdAt
 }
 
-func (c *Connection) WithDBGeneratedValues(row repository.SaveConnectionRow) *Connection {
+func (c *Connection) WithDBGeneratedValues(row query.SaveConnectionRow) *Connection {
 	return &Connection{
 		id:        row.ID,
 		key:       c.key,

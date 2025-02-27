@@ -2,7 +2,7 @@ package connections
 
 import (
 	_ "embed"
-	"github.com/imDrOne/minecraft-server-manager/internal/generated/repository"
+	"github.com/imDrOne/minecraft-server-manager/internal/generated/query"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -51,7 +51,7 @@ func TestWithDBGeneratedValues(t *testing.T) {
 	expectedCreatedAt := time.Now()
 	expectedId := int64(123)
 
-	dbRow := repository.SaveConnectionRow{
+	dbRow := query.SaveConnectionRow{
 		ID: 123,
 		CreatedAt: pgtype.Timestamp{
 			Time:             expectedCreatedAt,
