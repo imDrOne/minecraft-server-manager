@@ -14,7 +14,7 @@ import (
 //go:generate go tool mockgen -destination mock_test.go -package nodes . NodeQueries
 type NodeQueries interface {
 	CheckExistsNode(context.Context, repository.CheckExistsNodeParams) (bool, error)
-	SaveNode(context.Context, repository.SaveNodeParams) (int64, error)
+	SaveNode(context.Context, repository.SaveNodeParams) (repository.SaveNodeRow, error)
 	UpdateNodeById(context.Context, repository.UpdateNodeByIdParams) error
 	FindNodeById(context.Context, int64) (repository.Node, error)
 	FindNodes(context.Context, repository.FindNodesParams) ([]repository.Node, error)
@@ -29,6 +29,7 @@ func NewNodeRepository(p *pgxpool.Pool) *NodeRepository {
 	return &NodeRepository{q: repository.New(p)}
 }
 
+// Save todo: fix setting createdAt
 func (r NodeRepository) Save(ctx context.Context, createNode func() (*domain.Node, error)) (*domain.Node, error) {
 	node, err := createNode()
 	if err != nil {
@@ -46,7 +47,7 @@ func (r NodeRepository) Save(ctx context.Context, createNode func() (*domain.Nod
 		return nil, domain.ErrNodeAlreadyExist
 	}
 
-	id, err := r.q.SaveNode(ctx, repository.SaveNodeParams{
+	data, err := r.q.SaveNode(ctx, repository.SaveNodeParams{
 		Host: node.Host(),
 		Port: int32(node.Port()),
 	})
@@ -54,7 +55,7 @@ func (r NodeRepository) Save(ctx context.Context, createNode func() (*domain.Nod
 		return nil, fmt.Errorf("failed to insert node: %w", err)
 	}
 
-	return node.WithId(id)
+	return node.WithDBGeneratedValues(data), nil
 }
 
 func (r NodeRepository) Update(ctx context.Context, id int64, updateNode func(*domain.Node) (*domain.Node, error)) error {

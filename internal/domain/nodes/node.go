@@ -23,7 +23,7 @@ type Node struct {
 	createdAt time.Time
 }
 
-func NewNode(id int64, host string, port uint) (*Node, error) {
+func NewNode(id int64, host string, port uint, createdAt time.Time) (*Node, error) {
 	if err := validateHost(host); err != nil {
 		return nil, err
 	}
@@ -31,33 +31,32 @@ func NewNode(id int64, host string, port uint) (*Node, error) {
 		return nil, err
 	}
 
-	return &Node{id: id, host: host, port: port}, nil
+	return &Node{id: id, host: host, port: port, createdAt: createdAt}, nil
 }
-
 func CreateNode(host string, port uint) (*Node, error) {
-	return NewNode(0, host, port)
+	return NewNode(0, host, port, time.Time{})
 }
-
-func (n *Node) WithId(id int64) (*Node, error) {
-	return NewNode(id, n.host, n.port)
-}
-
 func FromDbModel(n repository.Node) (*Node, error) {
-	return NewNode(n.ID, n.Host, uint(n.Port))
+	return NewNode(n.ID, n.Host, uint(n.Port), n.CreatedAt.Time)
 }
 
+func (n *Node) WithDBGeneratedValues(row repository.SaveNodeRow) *Node {
+	return &Node{
+		id:        row.ID,
+		host:      n.host,
+		port:      n.port,
+		createdAt: row.CreatedAt.Time,
+	}
+}
 func (n *Node) Id() int64 {
 	return n.id
 }
-
 func (n *Node) Host() string {
 	return n.host
 }
-
 func (n *Node) Port() uint {
 	return n.port
 }
-
 func (n *Node) CreatedAt() time.Time {
 	return n.createdAt
 }
@@ -68,7 +67,6 @@ func validateHost(host string) error {
 	}
 	return nil
 }
-
 func validatePort(port uint) error {
 	if port <= 49152 || port >= 65535 {
 		return fmt.Errorf("%w: out of range 49152 - 65535", ErrValidationNode)

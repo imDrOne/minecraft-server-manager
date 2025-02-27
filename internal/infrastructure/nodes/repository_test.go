@@ -8,6 +8,7 @@ import (
 	domain "github.com/imDrOne/minecraft-server-manager/internal/domain/nodes"
 	"github.com/imDrOne/minecraft-server-manager/internal/generated/repository"
 	"github.com/imDrOne/minecraft-server-manager/pkg/pagination"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -81,7 +82,10 @@ func (suite *NodeRepositoryTestSuite) TestNodeRepository_Save_ErrorOnSaveNode() 
 
 	mockQueries.EXPECT().
 		SaveNode(suite.ctx, gomock.Any()).
-		Return(int64(0), errInternalSql)
+		Return(repository.SaveNodeRow{
+			ID:        0,
+			CreatedAt: pgtype.Timestamp{},
+		}, errInternalSql)
 
 	_, err := suite.repoSupplier(mockQueries).Save(suite.ctx, createNode)
 	require.Error(suite.T(), err)

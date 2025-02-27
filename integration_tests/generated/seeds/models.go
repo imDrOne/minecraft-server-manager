@@ -8,6 +8,16 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Connection struct {
+	ID        int64
+	NodeID    int64
+	Key       string
+	Checksum  string
+	User      pgtype.Text
+	CreatedAt pgtype.Timestamp
+	UpdatedAt pgtype.Timestamp
+}
+
 type Node struct {
 	ID        int64
 	Host      string
