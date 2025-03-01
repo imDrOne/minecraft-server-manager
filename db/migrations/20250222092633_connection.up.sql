@@ -3,7 +3,7 @@ CREATE TABLE "connection"
     id         BIGSERIAL PRIMARY KEY,
     node_id    BIGINT                              NOT NULL,
     key        TEXT                                NOT NULL,
-    checksum   VARCHAR                             NOT NULL,
+    checksum   VARCHAR UNIQUE                      NOT NULL,
     "user"     VARCHAR   DEFAULT 'root',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,

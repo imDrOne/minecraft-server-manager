@@ -69,3 +69,77 @@ func TestWithDBGeneratedValues(t *testing.T) {
 		assert.Equal(t, expectedCreatedAt, updatedConn.CreatedAt(), "CreatedAt should be updated correctly")
 	})
 }
+
+func TestCreateConnection(t *testing.T) {
+	tests := []struct {
+		name      string
+		key       string
+		user      string
+		expectErr bool
+	}{
+		{
+			name:      "Valid key and user",
+			key:       validSSHKey,
+			user:      "validuser",
+			expectErr: false,
+		},
+		{
+			name:      "Empty key",
+			key:       "",
+			user:      "validuser",
+			expectErr: true,
+		},
+		{
+			name:      "Invalid user",
+			key:       validSSHKey,
+			user:      "Invalid!User",
+			expectErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			conn, err := CreateConnection(tt.key, tt.user)
+			if (err != nil) != tt.expectErr {
+				t.Errorf("Expected error: %v, got: %v", tt.expectErr, err)
+			}
+			if err == nil && conn == nil {
+				t.Errorf("Expected a valid connection, got nil")
+			}
+		})
+	}
+}
+
+func TestCreateRootConnection(t *testing.T) {
+	tests := []struct {
+		name      string
+		key       string
+		expectErr bool
+	}{
+		{
+			name:      "Valid key",
+			key:       validSSHKey,
+			expectErr: false,
+		},
+		{
+			name:      "Empty key",
+			key:       "",
+			expectErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			conn, err := CreateRootConnection(tt.key)
+			if (err != nil) != tt.expectErr {
+				t.Errorf("Expected error: %v, got: %v", tt.expectErr, err)
+			}
+			if err == nil && conn == nil {
+				t.Errorf("Expected a valid connection, got nil")
+			}
+			if err == nil && conn.user != RootUser {
+				t.Errorf("Expected 'root' user, got: %v", conn.user)
+			}
+		})
+	}
+}

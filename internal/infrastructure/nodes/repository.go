@@ -29,7 +29,6 @@ func NewNodeRepository(p *pgxpool.Pool) *NodeRepository {
 	return &NodeRepository{q: query.New(p)}
 }
 
-// Save todo: fix setting createdAt
 func (r NodeRepository) Save(ctx context.Context, createNode func() (*domain.Node, error)) (*domain.Node, error) {
 	node, err := createNode()
 	if err != nil {

@@ -1,6 +1,7 @@
 package connections
 
 import (
+	"crypto/md5"
 	"errors"
 	"fmt"
 	"github.com/imDrOne/minecraft-server-manager/internal/generated/query"
@@ -9,9 +10,12 @@ import (
 	"time"
 )
 
+const RootUser = "root"
+
 var (
-	ErrConnectionNotFound   = errors.New("connection not found")
-	ErrValidationConnection = errors.New("invalid connection")
+	ErrConnectionNotFound      = errors.New("connection not found")
+	ErrValidationConnection    = errors.New("invalid connection")
+	ErrConnectionAlreadyExists = errors.New("invalid connection")
 )
 
 type Connection struct {
@@ -32,6 +36,14 @@ func NewConnection(id int64, key string, user string, createdAt time.Time) (*Con
 	return &Connection{id: id, key: key, user: user, createdAt: createdAt}, nil
 }
 
+func CreateConnection(key string, user string) (*Connection, error) {
+	return NewConnection(0, key, user, time.Time{})
+}
+
+func CreateRootConnection(key string) (*Connection, error) {
+	return NewConnection(0, key, RootUser, time.Time{})
+}
+
 func (c *Connection) Id() int64 {
 	return c.id
 }
@@ -43,6 +55,14 @@ func (c *Connection) User() string {
 }
 func (c *Connection) CreatedAt() time.Time {
 	return c.createdAt
+}
+func (c *Connection) ChecksumStr() string {
+	return fmt.Sprintf("%x", c.Checksum())
+}
+func (c *Connection) Checksum() []byte {
+	h := md5.New()
+	h.Write([]byte(c.key + c.user))
+	return h.Sum(nil)
 }
 
 func (c *Connection) WithDBGeneratedValues(row query.SaveConnectionRow) *Connection {
