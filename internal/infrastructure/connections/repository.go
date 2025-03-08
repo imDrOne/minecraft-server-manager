@@ -28,9 +28,6 @@ func (r ConnectionRepository) Save(ctx context.Context, createConn func() (*doma
 	}
 
 	checksum, err := conn.ChecksumStr()
-	if err != nil {
-		return nil, err
-	}
 	idExists, err := r.q.CheckExistsConnection(ctx, checksum)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check connection exist: %w", err)

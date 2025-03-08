@@ -2,6 +2,7 @@ package connections
 
 import (
 	"crypto/md5"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"github.com/imDrOne/minecraft-server-manager/internal/generated/query"
@@ -17,7 +18,6 @@ var (
 	ErrConnectionNotFound      = errors.New("connection not found")
 	ErrValidationConnection    = errors.New("invalid connection")
 	ErrConnectionAlreadyExists = errors.New("invalid connection")
-	ErrChecksumCalculating     = errors.New("error on checksum calc")
 )
 
 type Connection struct {
@@ -59,22 +59,14 @@ func (c *Connection) CreatedAt() time.Time {
 	return c.createdAt
 }
 func (c *Connection) ChecksumStr() (string, error) {
-	value, err := c.Checksum()
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%x", value), nil
+	return hex.EncodeToString(c.Checksum()), nil
 }
 
-func (c *Connection) Checksum() ([]byte, error) {
+func (c *Connection) Checksum() []byte {
 	h := md5.New()
-	if _, err := io.WriteString(h, c.key); err != nil {
-		return nil, ErrChecksumCalculating
-	}
-	if _, err := io.WriteString(h, c.user); err != nil {
-		return nil, ErrChecksumCalculating
-	}
-	return h.Sum(nil), nil
+	_, _ = io.WriteString(h, c.key)
+	_, _ = io.WriteString(h, c.user)
+	return h.Sum(nil)
 }
 
 func (c *Connection) WithDBGeneratedValues(row query.SaveConnectionRow) *Connection {
