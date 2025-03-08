@@ -27,7 +27,11 @@ func (r ConnectionRepository) Save(ctx context.Context, createConn func() (*doma
 		return nil, fmt.Errorf("failed to create connection: %w", err)
 	}
 
-	idExists, err := r.q.CheckExistsConnection(ctx, conn.ChecksumStr())
+	checksum, err := conn.ChecksumStr()
+	if err != nil {
+		return nil, err
+	}
+	idExists, err := r.q.CheckExistsConnection(ctx, checksum)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check connection exist: %w", err)
 	}
@@ -39,7 +43,7 @@ func (r ConnectionRepository) Save(ctx context.Context, createConn func() (*doma
 		NodeID:   conn.Id(),
 		Key:      conn.Key(),
 		User:     pgtype.Text{},
-		Checksum: conn.ChecksumStr(),
+		Checksum: checksum,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert connection: %w", err)
