@@ -22,14 +22,35 @@ func (q *Queries) CheckExistsConnection(ctx context.Context, checksum string) (b
 	return exists, err
 }
 
-const findConnectionsById = `-- name: FindConnectionsById :many
+const findConnectionById = `-- name: FindConnectionById :one
+SELECT id, node_id, key, checksum, "user", created_at, updated_at
+FROM connection
+WHERE id = $1
+`
+
+func (q *Queries) FindConnectionById(ctx context.Context, id int64) (Connection, error) {
+	row := q.db.QueryRow(ctx, findConnectionById, id)
+	var i Connection
+	err := row.Scan(
+		&i.ID,
+		&i.NodeID,
+		&i.Key,
+		&i.Checksum,
+		&i.User,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const findConnectionsByNodeId = `-- name: FindConnectionsByNodeId :many
 SELECT id, node_id, key, checksum, "user", created_at, updated_at
 FROM connection
 WHERE node_id = $1
 `
 
-func (q *Queries) FindConnectionsById(ctx context.Context, nodeID int64) ([]Connection, error) {
-	rows, err := q.db.Query(ctx, findConnectionsById, nodeID)
+func (q *Queries) FindConnectionsByNodeId(ctx context.Context, nodeID int64) ([]Connection, error) {
+	rows, err := q.db.Query(ctx, findConnectionsByNodeId, nodeID)
 	if err != nil {
 		return nil, err
 	}

@@ -2,7 +2,7 @@
 // versions:
 //   sqlc v1.28.0
 
-package repository
+package query
 
 import (
 	"context"

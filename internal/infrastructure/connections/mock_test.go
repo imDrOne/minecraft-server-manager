@@ -42,33 +42,48 @@ func (m *MockConnectionQueries) EXPECT() *MockConnectionQueriesMockRecorder {
 }
 
 // CheckExistsConnection mocks base method.
-func (m *MockConnectionQueries) CheckExistsConnection(ctx context.Context, checksum string) (bool, error) {
+func (m *MockConnectionQueries) CheckExistsConnection(arg0 context.Context, arg1 string) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckExistsConnection", ctx, checksum)
+	ret := m.ctrl.Call(m, "CheckExistsConnection", arg0, arg1)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CheckExistsConnection indicates an expected call of CheckExistsConnection.
-func (mr *MockConnectionQueriesMockRecorder) CheckExistsConnection(ctx, checksum any) *gomock.Call {
+func (mr *MockConnectionQueriesMockRecorder) CheckExistsConnection(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckExistsConnection", reflect.TypeOf((*MockConnectionQueries)(nil).CheckExistsConnection), ctx, checksum)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckExistsConnection", reflect.TypeOf((*MockConnectionQueries)(nil).CheckExistsConnection), arg0, arg1)
 }
 
-// FindConnectionsById mocks base method.
-func (m *MockConnectionQueries) FindConnectionsById(arg0 context.Context, arg1 int64) ([]query.Connection, error) {
+// FindConnectionById mocks base method.
+func (m *MockConnectionQueries) FindConnectionById(arg0 context.Context, arg1 int64) (query.Connection, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindConnectionsById", arg0, arg1)
+	ret := m.ctrl.Call(m, "FindConnectionById", arg0, arg1)
+	ret0, _ := ret[0].(query.Connection)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindConnectionById indicates an expected call of FindConnectionById.
+func (mr *MockConnectionQueriesMockRecorder) FindConnectionById(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindConnectionById", reflect.TypeOf((*MockConnectionQueries)(nil).FindConnectionById), arg0, arg1)
+}
+
+// FindConnectionsByNodeId mocks base method.
+func (m *MockConnectionQueries) FindConnectionsByNodeId(arg0 context.Context, arg1 int64) ([]query.Connection, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindConnectionsByNodeId", arg0, arg1)
 	ret0, _ := ret[0].([]query.Connection)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// FindConnectionsById indicates an expected call of FindConnectionsById.
-func (mr *MockConnectionQueriesMockRecorder) FindConnectionsById(arg0, arg1 any) *gomock.Call {
+// FindConnectionsByNodeId indicates an expected call of FindConnectionsByNodeId.
+func (mr *MockConnectionQueriesMockRecorder) FindConnectionsByNodeId(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindConnectionsById", reflect.TypeOf((*MockConnectionQueries)(nil).FindConnectionsById), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindConnectionsByNodeId", reflect.TypeOf((*MockConnectionQueries)(nil).FindConnectionsByNodeId), arg0, arg1)
 }
 
 // SaveConnection mocks base method.

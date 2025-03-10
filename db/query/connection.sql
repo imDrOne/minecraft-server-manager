@@ -1,4 +1,9 @@
--- name: FindConnectionsById :many
+-- name: FindConnectionById :one
+SELECT *
+FROM connection
+WHERE id = $1;
+
+-- name: FindConnectionsByNodeId :many
 SELECT *
 FROM connection
 WHERE node_id = $1;
