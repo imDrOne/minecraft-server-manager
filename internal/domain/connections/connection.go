@@ -47,7 +47,7 @@ func CreateRootConnection(key string) (*Connection, error) {
 }
 
 func FromDbModel(c query.Connection) (*Connection, error) {
-	return NewConnection(c.ID, c.Key, c.User.String, c.CreatedAt.Time)
+	return NewConnection(c.ID, c.Key, c.User, c.CreatedAt.Time)
 }
 
 func (c *Connection) Id() int64 {

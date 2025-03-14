@@ -86,7 +86,7 @@ RETURNING id, created_at
 type SaveConnectionParams struct {
 	NodeID   int64
 	Key      string
-	User     pgtype.Text
+	User     string
 	Checksum string
 }
 
@@ -117,7 +117,7 @@ WHERE id = $1
 type UpdateConnectionByIdParams struct {
 	ID   int64
 	Key  string
-	User pgtype.Text
+	User string
 }
 
 func (q *Queries) UpdateConnectionById(ctx context.Context, arg UpdateConnectionByIdParams) error {

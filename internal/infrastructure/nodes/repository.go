@@ -92,13 +92,12 @@ func (r NodeRepository) FindPaginated(ctx context.Context, req pagination.PageRe
 	}
 
 	return &domain.PagePaginatedNodes{
-		Data: *nodes,
+		Data: nodes,
 		Meta: req.ToPageMeta(uint64(total)),
 	}, nil
 }
 
-// Find todo: Change return data type, from *[]domain.Node to []domain.Node
-func (r NodeRepository) Find(ctx context.Context, pagination pagination.PageRequest) (*[]domain.Node, error) {
+func (r NodeRepository) Find(ctx context.Context, pagination pagination.PageRequest) ([]domain.Node, error) {
 	data, err := r.q.FindNodes(ctx, query.FindNodesParams{
 		Limit:  int32(pagination.Size()),
 		Offset: int32(pagination.Offset()),
@@ -116,7 +115,7 @@ func (r NodeRepository) Find(ctx context.Context, pagination pagination.PageRequ
 		nodes = append(nodes, *mapped)
 	}
 
-	return &nodes, nil
+	return nodes, nil
 }
 
 func (r NodeRepository) FindById(ctx context.Context, id int64) (*domain.Node, error) {

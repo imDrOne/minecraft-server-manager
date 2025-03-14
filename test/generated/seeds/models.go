@@ -13,7 +13,7 @@ type Connection struct {
 	NodeID    int64
 	Key       string
 	Checksum  string
-	User      pgtype.Text
+	User      string
 	CreatedAt pgtype.Timestamp
 	UpdatedAt pgtype.Timestamp
 }

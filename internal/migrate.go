@@ -86,6 +86,6 @@ func MigrateUpWithConnectionString(connString string) error {
 		}
 	}()
 
-	slog.Info("Migrate: up success")
+	slog.Info("migrate: up success")
 	return nil
 }

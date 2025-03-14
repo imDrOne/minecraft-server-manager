@@ -7,7 +7,7 @@ import (
 	domain "github.com/imDrOne/minecraft-server-manager/internal/domain/connections"
 	"github.com/imDrOne/minecraft-server-manager/internal/generated/query"
 	testutils "github.com/imDrOne/minecraft-server-manager/internal/pkg/test/repository"
-	"github.com/jackc/pgx/v5/pgtype"
+	pgtype "github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -37,16 +37,12 @@ var (
 var (
 	//go:embed test_key.pub
 	validSSHKey string
-	connUser    = pgtype.Text{
-		String: "test",
-		Valid:  true,
-	}
-	validConn = query.Connection{
+	validConn   = query.Connection{
 		ID:        1,
 		NodeID:    1,
 		Key:       validSSHKey,
 		Checksum:  "checksum",
-		User:      connUser,
+		User:      "test",
 		CreatedAt: pgtype.Timestamp{},
 		UpdatedAt: pgtype.Timestamp{},
 	}
@@ -55,7 +51,7 @@ var (
 		NodeID:    1,
 		Key:       "invalid-key",
 		Checksum:  "checksum",
-		User:      connUser,
+		User:      "test",
 		CreatedAt: pgtype.Timestamp{},
 		UpdatedAt: pgtype.Timestamp{},
 	}
@@ -68,7 +64,7 @@ func (suite *ConnectionRepositoryTestSuite) TestConnectionRepository_Save_ErrorO
 		CheckExistsConnection(suite.Ctx, gomock.Any()).
 		Return(false, testutils.ErrInternalSql)
 
-	_, err := suite.RepoSupplier().Save(suite.Ctx, createConn)
+	_, err := suite.RepoSupplier().Save(suite.Ctx, 1, createConn)
 	require.Error(suite.T(), err)
 	require.Contains(suite.T(), err.Error(), "failed to check connection exist")
 }
@@ -80,7 +76,7 @@ func (suite *ConnectionRepositoryTestSuite) TestConnectionRepository_Save_Alread
 		CheckExistsConnection(suite.Ctx, gomock.Any()).
 		Return(true, nil)
 
-	_, err := suite.RepoSupplier().Save(suite.Ctx, createConn)
+	_, err := suite.RepoSupplier().Save(suite.Ctx, 1, createConn)
 	require.Error(suite.T(), err)
 	require.EqualError(suite.T(), err, domain.ErrConnectionAlreadyExists.Error())
 }
@@ -99,7 +95,7 @@ func (suite *ConnectionRepositoryTestSuite) TestConnectionRepository_Save_ErrorO
 			CreatedAt: pgtype.Timestamp{},
 		}, testutils.ErrInternalSql)
 
-	_, err := suite.RepoSupplier().Save(suite.Ctx, createConn)
+	_, err := suite.RepoSupplier().Save(suite.Ctx, 1, createConn)
 	require.Error(suite.T(), err)
 	require.Contains(suite.T(), err.Error(), "failed to insert connection")
 }
@@ -108,7 +104,7 @@ func (suite *ConnectionRepositoryTestSuite) TestConnectionRepository_Save_ErrorO
 	nodeCreateErr := errors.New("error node create")
 
 	createNode := func() (*domain.Connection, error) { return nil, nodeCreateErr }
-	_, err := suite.RepoSupplier().Save(suite.Ctx, createNode)
+	_, err := suite.RepoSupplier().Save(suite.Ctx, 1, createNode)
 	require.Error(suite.T(), err)
 	require.Contains(suite.T(), err.Error(), nodeCreateErr.Error())
 }

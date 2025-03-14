@@ -7,7 +7,6 @@ import (
 	"fmt"
 	domain "github.com/imDrOne/minecraft-server-manager/internal/domain/connections"
 	"github.com/imDrOne/minecraft-server-manager/internal/generated/query"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -28,7 +27,7 @@ type ConnectionRepository struct {
 	q ConnectionQueries
 }
 
-func (r ConnectionRepository) Save(ctx context.Context, createConn CreateConn) (*domain.Connection, error) {
+func (r ConnectionRepository) Save(ctx context.Context, nodeId int64, createConn CreateConn) (*domain.Connection, error) {
 	conn, err := createConn()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create connection: %w", err)
@@ -44,9 +43,9 @@ func (r ConnectionRepository) Save(ctx context.Context, createConn CreateConn) (
 	}
 
 	data, err := r.q.SaveConnection(ctx, query.SaveConnectionParams{
-		NodeID:   conn.Id(),
+		NodeID:   nodeId,
 		Key:      conn.Key(),
-		User:     pgtype.Text{},
+		User:     "test",
 		Checksum: checksum,
 	})
 	if err != nil {
@@ -105,12 +104,9 @@ func (r ConnectionRepository) Update(ctx context.Context, id int64, updateConn U
 	}
 
 	err = r.q.UpdateConnectionById(ctx, query.UpdateConnectionByIdParams{
-		ID:  id,
-		Key: conn.Key(),
-		User: pgtype.Text{
-			String: conn.User(),
-			Valid:  true,
-		},
+		ID:   id,
+		Key:  conn.Key(),
+		User: conn.User(),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to update connection by id=%d query: %w", id, err)

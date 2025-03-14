@@ -4,10 +4,10 @@ CREATE TABLE "connection"
     node_id    BIGINT                              NOT NULL,
     key        TEXT                                NOT NULL,
     checksum   VARCHAR UNIQUE                      NOT NULL,
-    "user"     VARCHAR   DEFAULT 'root',
+    "user"     VARCHAR   DEFAULT 'root'            NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    CONSTRAINT fk_user FOREIGN KEY (node_id) REFERENCES node (id) ON DELETE CASCADE
+    CONSTRAINT fk_node FOREIGN KEY (node_id) REFERENCES node (id) ON DELETE CASCADE
 );
 
 ALTER SEQUENCE connection_id_seq RESTART WITH 100;

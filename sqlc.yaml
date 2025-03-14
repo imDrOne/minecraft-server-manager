@@ -14,5 +14,5 @@ sql:
     gen:
       go:
         package: "query"
-        out: "integration_tests/generated/seeds"
+        out: "test/generated/seeds"
         sql_package: "pgx/v5"
