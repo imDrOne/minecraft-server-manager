@@ -1,6 +1,6 @@
 module github.com/imDrOne/minecraft-server-manager
 
-go 1.23.5
+go 1.24.0
 
 require (
 	github.com/golang-migrate/migrate/v4 v4.18.2
@@ -9,6 +9,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/testcontainers/testcontainers-go v0.35.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.35.0
+	go.uber.org/mock v0.5.0
 )
 
 require (
@@ -110,7 +111,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.14.3 // indirect
-	github.com/jackc/pgerrcode v0.0.0-20240316143900-6e2875d9b438 // indirect
+	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgproto3/v2 v2.3.3 // indirect
@@ -247,4 +248,5 @@ require (
 tool (
 	github.com/golang-migrate/migrate/v4/cmd/migrate
 	github.com/sqlc-dev/sqlc/cmd/sqlc
+	go.uber.org/mock/mockgen
 )
