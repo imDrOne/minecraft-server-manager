@@ -33,7 +33,7 @@ func (r ConnectionRepository) Save(ctx context.Context, nodeId int64, createConn
 		return nil, fmt.Errorf("failed to create connection: %w", err)
 	}
 
-	checksum, err := conn.ChecksumStr()
+	checksum := conn.ChecksumStr()
 	idExists, err := r.q.CheckExistsConnection(ctx, checksum)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check connection exist: %w", err)
@@ -45,7 +45,7 @@ func (r ConnectionRepository) Save(ctx context.Context, nodeId int64, createConn
 	data, err := r.q.SaveConnection(ctx, query.SaveConnectionParams{
 		NodeID:   nodeId,
 		Key:      conn.Key(),
-		User:     "test",
+		User:     conn.User(),
 		Checksum: checksum,
 	})
 	if err != nil {

@@ -62,8 +62,8 @@ func (c *Connection) User() string {
 func (c *Connection) CreatedAt() time.Time {
 	return c.createdAt
 }
-func (c *Connection) ChecksumStr() (string, error) {
-	return hex.EncodeToString(c.Checksum()), nil
+func (c *Connection) ChecksumStr() string {
+	return hex.EncodeToString(c.Checksum())
 }
 
 func (c *Connection) Checksum() []byte {

@@ -34,12 +34,20 @@ func (suite *ConnectionRepositoryTestSuite) SetupSuite() {
 	suite.seedQuery = seeds.New(suite.db.Pool)
 }
 
-func (suite *ConnectionRepositoryTestSuite) BeforeTest(_, _ string) {
-	_ = suite.seedQuery.InsertNodeSeeds(context.Background())
+func (suite *ConnectionRepositoryTestSuite) BeforeTest(_, testName string) {
+	_ = suite.seedQuery.InsertNodeSeed(context.Background())
+
+	switch testName {
+	case "TestConnectionRepository_Update_UpdatedConnection":
+		_ = suite.seedQuery.InsertConnectionSeed(context.Background())
+	case "TestConnectionRepository_FindById_NodesConnections":
+		_ = suite.seedQuery.InsertConnectionsSeed(context.Background())
+	}
 }
 
 func (suite *ConnectionRepositoryTestSuite) AfterTest(_, _ string) {
 	_, _ = suite.db.Pool.Exec(context.Background(), "TRUNCATE connection RESTART IDENTITY CASCADE")
+	_, _ = suite.db.Pool.Exec(context.Background(), "TRUNCATE node RESTART IDENTITY CASCADE")
 }
 
 func (suite *ConnectionRepositoryTestSuite) TearDownSuite() {
@@ -51,40 +59,41 @@ func (suite *ConnectionRepositoryTestSuite) TearDownSuite() {
 }
 
 func (suite *ConnectionRepositoryTestSuite) TestConnectionRepository_Save_CreatedConnection() {
-	expectedUser := "user"
 	expectedNodeId := int64(100)
-	actual, err := suite.repo.Save(suite.ctx, expectedNodeId, func() (*domain.Connection, error) {
-		return domain.CreateConnection(validSSHKey, expectedUser)
+	expectedConn, _ := domain.CreateConnection(validSSHKey, "user")
+	actual, _ := suite.repo.Save(suite.ctx, expectedNodeId, func() (*domain.Connection, error) {
+		return expectedConn, nil
 	})
-	suite.Require().NoError(err)
 	suite.Require().NotEmpty(actual.Id())
-	suite.EqualValues(expectedUser, actual.User())
-	suite.EqualValues(validSSHKey, actual.Key())
+	suite.EqualValues(expectedConn.User(), actual.User())
+	suite.EqualValues(expectedConn.Key(), actual.Key())
+	suite.EqualValues(expectedConn.Checksum(), actual.Checksum())
 }
 
 func (suite *ConnectionRepositoryTestSuite) TestConnectionRepository_Update_UpdatedConnection() {
-	nodeId := int64(100)
-	conn, err := suite.repo.Save(suite.ctx, nodeId, func() (*domain.Connection, error) {
-		return domain.CreateConnection(validSSHKey, "superuser")
-	})
-	suite.Require().NoError(err)
-	suite.EqualValues(conn.User(), "superuser")
-
+	connId := int64(100)
 	expectedConn, _ := domain.CreateRootConnection(validSSHKey)
-	err = suite.repo.Update(suite.ctx, conn.Id(), func(c domain.Connection) (*domain.Connection, error) {
+	err := suite.repo.Update(suite.ctx, connId, func(c domain.Connection) (*domain.Connection, error) {
 		return expectedConn, nil
 	})
 	suite.Require().NoError(err)
 
-	conn, err = suite.repo.FindById(suite.ctx, conn.Id())
+	actualConn, err := suite.repo.FindById(suite.ctx, connId)
 	suite.Require().NoError(err)
 
-	conns, err := suite.repo.FindByNodeId(suite.ctx, nodeId)
-	suite.Require().NoError(err)
-	suite.Len(conns, 1)
+	suite.EqualValues(expectedConn.User(), actualConn.User())
+	suite.EqualValues(expectedConn.Key(), actualConn.Key())
+	suite.EqualValues(expectedConn.Checksum(), actualConn.Checksum())
+}
 
-	suite.EqualValues(expectedConn.User(), conn.User())
-	suite.EqualValues(expectedConn.Key(), conn.Key())
+func (suite *ConnectionRepositoryTestSuite) TestConnectionRepository_FindById_NodesConnections() {
+	actualConns, err := suite.repo.FindByNodeId(suite.ctx, 100)
+	suite.Require().NoError(err)
+	suite.Len(actualConns, 3)
+
+	actualConns, err = suite.repo.FindByNodeId(suite.ctx, 1000)
+	suite.Require().NoError(err)
+	suite.Len(actualConns, 0)
 }
 
 func (suite *ConnectionRepositoryTestSuite) TestConnectionRepository_Save_ErrNotFound() {
