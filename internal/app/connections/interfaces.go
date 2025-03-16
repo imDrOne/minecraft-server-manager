@@ -6,6 +6,7 @@ import (
 	"github.com/imDrOne/minecraft-server-manager/internal/infrastructure/connections"
 )
 
+//go:generate go tool mockgen -destination mock_test.go -package connections . Repository
 type Repository interface {
 	Save(context.Context, int64, connections.CreateConn) (*domain.Connection, error)
 	FindByNodeId(context.Context, int64) ([]domain.Connection, error)
