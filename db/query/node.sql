@@ -12,7 +12,7 @@ WHERE id = $1;
 -- name: SaveNode :one
 INSERT INTO node (host, port)
 VALUES ($1, $2)
-RETURNING id;
+RETURNING id, created_at;
 
 -- name: UpdateNodeById :exec
 UPDATE node

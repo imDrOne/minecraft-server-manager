@@ -5,7 +5,11 @@ export
 run:
 	go mod tidy && go mod download && \
 	go run ./cmd/app
-.PHONY: run
+
+test:
+	go test -v ./...
+
+.PHONY: run test
 
 # Prepare local environment
 .PHONY: up-docker down-docker
@@ -21,10 +25,10 @@ down-docker:
 .PHONY: migrate-create migrate-up
 
 migrate-create:
-	go tool migrate create -ext sql -dir db/migrations "$(MIGRATE_NAME)"
+	go tool migrate create -ext sql -dir db/migrations "$(name)"
 
 migrate-up:
-	go run ./cmd/migration
+	go run ./cmd/migrate
 
 # Tools
 .PHONY: sqlc-generate

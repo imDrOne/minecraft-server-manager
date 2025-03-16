@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	repository "github.com/imDrOne/minecraft-server-manager/internal/generated/repository"
+	repository "github.com/imDrOne/minecraft-server-manager/internal/generated/query"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -102,10 +102,10 @@ func (mr *MockNodeQueriesMockRecorder) FindNodes(arg0, arg1 any) *gomock.Call {
 }
 
 // SaveNode mocks base method.
-func (m *MockNodeQueries) SaveNode(arg0 context.Context, arg1 repository.SaveNodeParams) (int64, error) {
+func (m *MockNodeQueries) SaveNode(arg0 context.Context, arg1 repository.SaveNodeParams) (repository.SaveNodeRow, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SaveNode", arg0, arg1)
-	ret0, _ := ret[0].(int64)
+	ret0, _ := ret[0].(repository.SaveNodeRow)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

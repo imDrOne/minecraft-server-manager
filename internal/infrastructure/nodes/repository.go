@@ -6,18 +6,18 @@ import (
 	"errors"
 	"fmt"
 	domain "github.com/imDrOne/minecraft-server-manager/internal/domain/nodes"
-	"github.com/imDrOne/minecraft-server-manager/internal/generated/repository"
+	"github.com/imDrOne/minecraft-server-manager/internal/generated/query"
 	"github.com/imDrOne/minecraft-server-manager/pkg/pagination"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 //go:generate go tool mockgen -destination mock_test.go -package nodes . NodeQueries
 type NodeQueries interface {
-	CheckExistsNode(context.Context, repository.CheckExistsNodeParams) (bool, error)
-	SaveNode(context.Context, repository.SaveNodeParams) (int64, error)
-	UpdateNodeById(context.Context, repository.UpdateNodeByIdParams) error
-	FindNodeById(context.Context, int64) (repository.Node, error)
-	FindNodes(context.Context, repository.FindNodesParams) ([]repository.Node, error)
+	CheckExistsNode(context.Context, query.CheckExistsNodeParams) (bool, error)
+	SaveNode(context.Context, query.SaveNodeParams) (query.SaveNodeRow, error)
+	UpdateNodeById(context.Context, query.UpdateNodeByIdParams) error
+	FindNodeById(context.Context, int64) (query.Node, error)
+	FindNodes(context.Context, query.FindNodesParams) ([]query.Node, error)
 	CountNode(context.Context) (int64, error)
 }
 
@@ -26,7 +26,7 @@ type NodeRepository struct {
 }
 
 func NewNodeRepository(p *pgxpool.Pool) *NodeRepository {
-	return &NodeRepository{q: repository.New(p)}
+	return &NodeRepository{q: query.New(p)}
 }
 
 func (r NodeRepository) Save(ctx context.Context, createNode func() (*domain.Node, error)) (*domain.Node, error) {
@@ -35,7 +35,7 @@ func (r NodeRepository) Save(ctx context.Context, createNode func() (*domain.Nod
 		return nil, fmt.Errorf("failed to create node: %w", err)
 	}
 
-	isExists, err := r.q.CheckExistsNode(ctx, repository.CheckExistsNodeParams{
+	isExists, err := r.q.CheckExistsNode(ctx, query.CheckExistsNodeParams{
 		Host: node.Host(),
 		Port: int32(node.Port()),
 	})
@@ -46,7 +46,7 @@ func (r NodeRepository) Save(ctx context.Context, createNode func() (*domain.Nod
 		return nil, domain.ErrNodeAlreadyExist
 	}
 
-	id, err := r.q.SaveNode(ctx, repository.SaveNodeParams{
+	data, err := r.q.SaveNode(ctx, query.SaveNodeParams{
 		Host: node.Host(),
 		Port: int32(node.Port()),
 	})
@@ -54,7 +54,7 @@ func (r NodeRepository) Save(ctx context.Context, createNode func() (*domain.Nod
 		return nil, fmt.Errorf("failed to insert node: %w", err)
 	}
 
-	return node.WithId(id)
+	return node.WithDBGeneratedValues(data), nil
 }
 
 func (r NodeRepository) Update(ctx context.Context, id int64, updateNode func(*domain.Node) (*domain.Node, error)) error {
@@ -68,7 +68,7 @@ func (r NodeRepository) Update(ctx context.Context, id int64, updateNode func(*d
 		return fmt.Errorf("failed to update node: %w", err)
 	}
 
-	err = r.q.UpdateNodeById(ctx, repository.UpdateNodeByIdParams{
+	err = r.q.UpdateNodeById(ctx, query.UpdateNodeByIdParams{
 		ID:   node.Id(),
 		Host: node.Host(),
 		Port: int32(node.Port()),
@@ -92,13 +92,13 @@ func (r NodeRepository) FindPaginated(ctx context.Context, req pagination.PageRe
 	}
 
 	return &domain.PagePaginatedNodes{
-		Data: *nodes,
+		Data: nodes,
 		Meta: req.ToPageMeta(uint64(total)),
 	}, nil
 }
 
-func (r NodeRepository) Find(ctx context.Context, pagination pagination.PageRequest) (*[]domain.Node, error) {
-	data, err := r.q.FindNodes(ctx, repository.FindNodesParams{
+func (r NodeRepository) Find(ctx context.Context, pagination pagination.PageRequest) ([]domain.Node, error) {
+	data, err := r.q.FindNodes(ctx, query.FindNodesParams{
 		Limit:  int32(pagination.Size()),
 		Offset: int32(pagination.Offset()),
 	})
@@ -115,7 +115,7 @@ func (r NodeRepository) Find(ctx context.Context, pagination pagination.PageRequ
 		nodes = append(nodes, *mapped)
 	}
 
-	return &nodes, nil
+	return nodes, nil
 }
 
 func (r NodeRepository) FindById(ctx context.Context, id int64) (*domain.Node, error) {

@@ -2,7 +2,8 @@ package nodes
 
 import (
 	"fmt"
-	"github.com/imDrOne/minecraft-server-manager/internal/generated/repository"
+	"github.com/imDrOne/minecraft-server-manager/internal/generated/query"
+	"github.com/jackc/pgx/v5/pgtype"
 	"testing"
 	"time"
 )
@@ -23,7 +24,7 @@ func TestNewNode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			node, err := NewNode(tt.id, tt.host, tt.port)
+			node, err := NewNode(tt.id, tt.host, tt.port, time.Time{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewNode() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -61,20 +62,28 @@ func TestCreateNode(t *testing.T) {
 }
 
 func TestWithId(t *testing.T) {
-	node, _ := NewNode(0, "localhost", 50000)
+	node, _ := NewNode(0, "localhost", 50000, time.Time{})
 	newID := int64(42)
-	newNode, err := node.WithId(newID)
+	newCreatedAt := time.Now()
+	newNode := node.WithDBGeneratedValues(query.SaveNodeRow{
+		ID: newID,
+		CreatedAt: pgtype.Timestamp{
+			Time:  newCreatedAt,
+			Valid: true,
+		},
+	})
 
-	if err != nil {
-		t.Fatalf("WithId() error = %v, expected no error", err)
-	}
 	if newNode.id != newID {
-		t.Errorf("WithId() = %+v, expected id=%d", newNode, newID)
+		t.Errorf("WithDBGeneratedValues() = %+v, expected id=%d", newNode, newID)
+	}
+
+	if !newNode.createdAt.Equal(newCreatedAt) {
+		t.Errorf("WithDBGeneratedValues() = %+v, expected id=%d", newNode, newID)
 	}
 }
 
 func TestFromDbModel(t *testing.T) {
-	dbNode := repository.Node{ID: 10, Host: "dbhost", Port: 50001}
+	dbNode := query.Node{ID: 10, Host: "dbhost", Port: 50001}
 	node, err := FromDbModel(dbNode)
 
 	if err != nil {

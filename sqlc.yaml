@@ -5,14 +5,14 @@ sql:
     schema: "db/migrations"
     gen:
       go:
-        package: "repository"
-        out: "internal/generated/repository"
+        package: "query"
+        out: "internal/generated/query"
         sql_package: "pgx/v5"
   - engine: "postgresql"
     queries: "db/query/test"
     schema: "db/migrations"
     gen:
       go:
-        package: "repository"
-        out: "integration_tests/generated/seeds"
+        package: "query"
+        out: "test/generated/seeds"
         sql_package: "pgx/v5"

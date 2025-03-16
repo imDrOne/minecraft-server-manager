@@ -3,10 +3,12 @@
 //   sqlc v1.28.0
 // source: node.sql
 
-package repository
+package query
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const checkExistsNode = `-- name: CheckExistsNode :one
@@ -96,7 +98,7 @@ func (q *Queries) FindNodes(ctx context.Context, arg FindNodesParams) ([]Node, e
 const saveNode = `-- name: SaveNode :one
 INSERT INTO node (host, port)
 VALUES ($1, $2)
-RETURNING id
+RETURNING id, created_at
 `
 
 type SaveNodeParams struct {
@@ -104,11 +106,16 @@ type SaveNodeParams struct {
 	Port int32
 }
 
-func (q *Queries) SaveNode(ctx context.Context, arg SaveNodeParams) (int64, error) {
+type SaveNodeRow struct {
+	ID        int64
+	CreatedAt pgtype.Timestamp
+}
+
+func (q *Queries) SaveNode(ctx context.Context, arg SaveNodeParams) (SaveNodeRow, error) {
 	row := q.db.QueryRow(ctx, saveNode, arg.Host, arg.Port)
-	var id int64
-	err := row.Scan(&id)
-	return id, err
+	var i SaveNodeRow
+	err := row.Scan(&i.ID, &i.CreatedAt)
+	return i, err
 }
 
 const updateNodeById = `-- name: UpdateNodeById :exec

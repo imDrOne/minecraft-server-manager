@@ -2,12 +2,12 @@ package infrastructure
 
 import (
 	"context"
-	"github.com/imDrOne/minecraft-server-manager/integration_tests/generated/seeds"
-	"github.com/imDrOne/minecraft-server-manager/integration_tests/lib"
 	domain "github.com/imDrOne/minecraft-server-manager/internal/domain/nodes"
 	"github.com/imDrOne/minecraft-server-manager/internal/infrastructure/nodes"
 	"github.com/imDrOne/minecraft-server-manager/pkg/db"
 	"github.com/imDrOne/minecraft-server-manager/pkg/pagination"
+	seeds "github.com/imDrOne/minecraft-server-manager/test/generated/seeds"
+	"github.com/imDrOne/minecraft-server-manager/test/lib"
 	"github.com/stretchr/testify/suite"
 	"testing"
 )
@@ -16,7 +16,7 @@ type NodeRepositoryTestSuite struct {
 	suite.Suite
 	db        *db.Postgres
 	repo      *nodes.NodeRepository
-	seedQuery *repository.Queries
+	seedQuery *seeds.Queries
 	ctx       context.Context
 }
 
@@ -28,7 +28,7 @@ func (suite *NodeRepositoryTestSuite) SetupSuite() {
 	suite.Require().NoError(err)
 
 	suite.repo = nodes.NewNodeRepository(suite.db.Pool)
-	suite.seedQuery = repository.New(suite.db.Pool)
+	suite.seedQuery = seeds.New(suite.db.Pool)
 }
 
 func (suite *NodeRepositoryTestSuite) AfterTest(_, _ string) {
@@ -131,6 +131,6 @@ func (suite *NodeRepositoryTestSuite) TestNodeRepository_FindPaginated() {
 	}
 }
 
-func TestUserRepositorySuite(t *testing.T) {
+func TestNodeRepositorySuite(t *testing.T) {
 	suite.Run(t, new(NodeRepositoryTestSuite))
 }

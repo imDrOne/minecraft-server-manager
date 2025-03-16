@@ -2,8 +2,8 @@ package infrastructure
 
 import (
 	"context"
-	"github.com/imDrOne/minecraft-server-manager/integration_tests/lib"
 	"github.com/imDrOne/minecraft-server-manager/internal"
+	"github.com/imDrOne/minecraft-server-manager/test/lib"
 	"log/slog"
 	"os"
 	"testing"
@@ -24,7 +24,6 @@ func TestMain(m *testing.M) {
 	}
 
 	code := m.Run()
-	//lib.StopPostgresContainer(ctx)
 
 	os.Exit(code)
 }

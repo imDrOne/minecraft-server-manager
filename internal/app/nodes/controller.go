@@ -9,7 +9,56 @@ import (
 	"strconv"
 )
 
-func (h NodeHandlers) GetPaginated(w http.ResponseWriter, r *http.Request) {
+type NodeController struct {
+	repo Repository
+}
+
+func NewController(repo Repository) NodeController {
+	return NodeController{repo}
+}
+
+func (h NodeController) Create(w http.ResponseWriter, r *http.Request) {
+	var nodeDto CreateNodeRequestDto
+	if err := json.NewDecoder(r.Body).Decode(&nodeDto); err != nil {
+		http.Error(w, "invalid json", http.StatusBadRequest)
+		return
+	}
+
+	node, err := h.repo.Save(r.Context(), func() (*domain.Node, error) {
+		return domain.CreateNode(nodeDto.Host, uint(nodeDto.Port))
+	})
+	if err != nil {
+		msg := err.Error()
+		statusCode := http.StatusInternalServerError
+
+		switch {
+		case errors.Is(err, domain.ErrValidationNode):
+			statusCode = http.StatusBadRequest
+		case errors.Is(err, domain.ErrNodeAlreadyExist):
+			statusCode = http.StatusConflict
+		}
+
+		http.Error(w, msg, statusCode)
+		return
+	}
+
+	j, err := json.Marshal(NodeResponseDto{
+		Id:        node.Id(),
+		Host:      node.Host(),
+		Port:      int32(node.Port()),
+		CreatedAt: node.CreatedAt(),
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	w.Write(j)
+}
+
+func (h NodeController) GetPaginated(w http.ResponseWriter, r *http.Request) {
 	var p FindNodeRequestDto
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -46,7 +95,7 @@ func (h NodeHandlers) GetPaginated(w http.ResponseWriter, r *http.Request) {
 	w.Write(j)
 }
 
-func (h NodeHandlers) GetById(w http.ResponseWriter, r *http.Request) {
+func (h NodeController) GetById(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	if idStr == "" {
 		http.Error(w, "expected id - got empty string", http.StatusBadRequest)
@@ -62,11 +111,14 @@ func (h NodeHandlers) GetById(w http.ResponseWriter, r *http.Request) {
 	node, err := h.repo.FindById(r.Context(), int64(id))
 	if err != nil {
 		msg := err.Error()
-		if errors.Is(err, domain.ErrNodeNotFound) {
-			http.Error(w, msg, http.StatusNotFound)
-		} else {
-			http.Error(w, msg, http.StatusInternalServerError)
+		statusCode := http.StatusInternalServerError
+
+		switch {
+		case errors.Is(err, domain.ErrNodeNotFound):
+			statusCode = http.StatusBadRequest
 		}
+
+		http.Error(w, msg, statusCode)
 		return
 	}
 

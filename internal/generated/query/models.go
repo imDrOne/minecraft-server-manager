@@ -2,11 +2,21 @@
 // versions:
 //   sqlc v1.28.0
 
-package repository
+package query
 
 import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type Connection struct {
+	ID        int64
+	NodeID    int64
+	Key       string
+	Checksum  string
+	User      string
+	CreatedAt pgtype.Timestamp
+	UpdatedAt pgtype.Timestamp
+}
 
 type Node struct {
 	ID        int64
