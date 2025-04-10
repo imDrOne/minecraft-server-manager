@@ -40,22 +40,21 @@ func MigrateUp(config *config.Config) {
 		os.Exit(1)
 	}
 
-	if err := MigrateUpWithConnectionString(connData.String()); err != nil {
+	if err = MigrateUpWithConnectionString(connData.String()); err != nil {
 		slog.Error(err.Error())
 		os.Exit(1)
 	}
 }
 
-func MigrateUpWithConnectionString(connString string) error {
+func MigrateUpWithConnectionString(connString string) (err error) {
 	var (
 		attempts = _defaultAttempts
-		err      error
 		m        *migrate.Migrate
 	)
 
 	for attempts > 0 {
 		migrationsPath := filepath.Join(basePath, "..", "db", "migrations")
-		m, err = migrate.New(fmt.Sprintf("file://%s", migrationsPath), connString)
+		m, err = migrate.New(fmt.Sprintf("file:%s", migrationsPath), connString)
 		if err == nil {
 			break
 		}
@@ -71,21 +70,23 @@ func MigrateUpWithConnectionString(connString string) error {
 	if m == nil || err != nil {
 		return err
 	}
-
-	if err = m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		slog.Error("migrate: up error", slog.String("error", err.Error()))
-		return err
-	}
 	defer func() {
 		srcErr, dbErr := m.Close()
 		if srcErr != nil {
 			slog.Error("migrate: error during closing src", slog.String("error", err.Error()))
+			err = srcErr
 		}
 		if dbErr != nil {
 			slog.Error("migrate: error during closing db", slog.String("error", err.Error()))
+			err = srcErr
 		}
 	}()
 
-	slog.Info("migrate: up success")
-	return nil
+	if err = m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		slog.Error("migrate: up error", slog.String("error", err.Error()))
+		return err
+	} else {
+		slog.Info("migrate: up success")
+		return nil
+	}
 }

@@ -16,16 +16,16 @@ type Suite[M, T any] struct {
 }
 
 func (suite *Suite[T, R]) SetupTest(newMock func(ctrl *gomock.Controller) T, newTarget func(T) R) {
-	var mockQueries T
+	var mock T
 
 	suite.Ctx = context.Background()
 	suite.MockSupplier = func() T {
 		ctrl := gomock.NewController(suite.T())
-		mockQueries = newMock(ctrl)
-		return mockQueries
+		mock = newMock(ctrl)
+		return mock
 	}
 
 	suite.TargetSupplier = func() R {
-		return newTarget(mockQueries)
+		return newTarget(mock)
 	}
 }
