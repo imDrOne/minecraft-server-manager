@@ -5,6 +5,7 @@ import (
 	"errors"
 	domain "github.com/imDrOne/minecraft-server-manager/internal/domain/connections"
 	"net/http"
+	"strconv"
 )
 
 type ConnectionController struct {
@@ -54,4 +55,46 @@ func (c ConnectionController) Create(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	w.Write(j)
+}
+
+func (c ConnectionController) Update(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	if idStr == "" {
+		http.Error(w, "expected id - got empty string", http.StatusBadRequest)
+		return
+	}
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "error during parsing id", http.StatusBadRequest)
+		return
+	}
+
+	var connDto UpdateConnectionRequestDto
+	if err := json.NewDecoder(r.Body).Decode(&connDto); err != nil {
+		http.Error(w, "invalid json", http.StatusBadRequest)
+		return
+	}
+
+	err = c.repo.Update(r.Context(), int64(id), func(connection domain.Connection) (*domain.Connection, error) {
+		return connection.Update(connDto.Key, connDto.User)
+	})
+
+	if err != nil {
+		msg := err.Error()
+		statusCode := http.StatusInternalServerError
+
+		switch {
+		case errors.Is(err, domain.ErrValidationConnection):
+			statusCode = http.StatusBadRequest
+		case errors.Is(err, domain.ErrConnectionNotFound):
+			statusCode = http.StatusNotFound
+		}
+
+		http.Error(w, msg, statusCode)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusNoContent)
 }

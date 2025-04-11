@@ -4,6 +4,7 @@ import (
 	"bytes"
 	_ "embed"
 	"encoding/json"
+	"errors"
 	domain "github.com/imDrOne/minecraft-server-manager/internal/domain/connections"
 	"github.com/imDrOne/minecraft-server-manager/internal/infrastructure/connections"
 	testutils "github.com/imDrOne/minecraft-server-manager/internal/pkg/test"
@@ -18,6 +19,11 @@ import (
 
 //go:embed test_key.pub
 var validSSHKey string
+
+func originalHandler() *ConnectionController {
+	repo := connections.NewConnectionRepository(nil)
+	return &ConnectionController{repo}
+}
 
 type ConnectionHandlerTestSuite struct {
 	testutils.Suite[*MockRepository, *ConnectionController]
@@ -34,10 +40,11 @@ func (suite *ConnectionHandlerTestSuite) SetupTest() {
 	)
 }
 
-func (suite *ConnectionHandlerTestSuite) TestConnectionHandler_Create_EmptyBody() {
+func TestConnectionHandler_Create_EmptyBody(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/", nil)
 	w := httptest.NewRecorder()
-	suite.TargetSupplier().Create(w, req)
+	handler := originalHandler()
+	handler.Create(w, req)
 	res := w.Result()
 	defer func() {
 		if err := res.Body.Close(); err != nil {
@@ -47,10 +54,10 @@ func (suite *ConnectionHandlerTestSuite) TestConnectionHandler_Create_EmptyBody(
 
 	data, err := io.ReadAll(res.Body)
 	if err != nil {
-		suite.Fail("err on read response body")
+		require.Fail(t, "err on read response body")
 	}
-	suite.EqualValues(http.StatusBadRequest, res.StatusCode)
-	suite.Contains(string(data), "invalid json")
+	require.EqualValues(t, http.StatusBadRequest, res.StatusCode)
+	require.Contains(t, string(data), "invalid json")
 }
 
 func (suite *ConnectionHandlerTestSuite) TestConnectionHandler_Create_DuplicateErr() {
@@ -106,8 +113,7 @@ func TestConnectionController_Create_InvalidDomain(t *testing.T) {
 		},
 	}
 
-	repo := connections.NewConnectionRepository(nil)
-	handler := ConnectionController{repo}
+	handler := originalHandler()
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -133,6 +139,123 @@ func TestConnectionController_Create_InvalidDomain(t *testing.T) {
 			}
 			require.EqualValues(t, http.StatusBadRequest, res.StatusCode)
 			require.Contains(t, string(data), domain.ErrValidationConnection.Error())
+		})
+	}
+}
+
+func TestConnectionController_Create_InvalidPathId(t *testing.T) {
+	tests := []struct {
+		name  string
+		value string
+		error string
+	}{
+		{
+			name:  "empty id",
+			value: "",
+			error: "expected id - got empty string",
+		},
+		{
+			name:  "not numeric id",
+			value: "test",
+			error: "error during parsing id",
+		},
+	}
+
+	handler := originalHandler()
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPut, "/", nil)
+			req.SetPathValue("id", test.value)
+
+			w := httptest.NewRecorder()
+			handler.Update(w, req)
+			res := w.Result()
+			defer func() {
+				if err := res.Body.Close(); err != nil {
+					panic("err on writing result")
+				}
+			}()
+
+			data, err := io.ReadAll(res.Body)
+			if err != nil {
+				require.Fail(t, "err on read response body")
+			}
+			require.EqualValues(t, http.StatusBadRequest, res.StatusCode)
+			require.Contains(t, string(data), test.error)
+		})
+	}
+}
+
+func (suite *ConnectionHandlerTestSuite) TestConnectionController_Update_BusinessLogicResult() {
+	tests := []struct {
+		name           string
+		expectedError  error
+		responseStatus int
+		wantErr        bool
+	}{
+		{
+			name:           "validation error",
+			wantErr:        true,
+			expectedError:  domain.ErrValidationConnection,
+			responseStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "not found error",
+			wantErr:        true,
+			expectedError:  domain.ErrConnectionNotFound,
+			responseStatus: http.StatusNotFound,
+		},
+		{
+			name:           "internal error",
+			wantErr:        true,
+			expectedError:  errors.New("internal error"),
+			responseStatus: http.StatusInternalServerError,
+		},
+		{
+			name:           "successfully update",
+			expectedError:  nil,
+			responseStatus: http.StatusNoContent,
+			wantErr:        false,
+		},
+	}
+
+	for _, test := range tests {
+		suite.Run(test.name, func() {
+			mockRepo := suite.MockSupplier()
+			mockRepo.EXPECT().
+				Update(suite.Ctx, gomock.Any(), gomock.Any()).
+				Return(test.expectedError)
+
+			var b bytes.Buffer
+			err := json.NewEncoder(&b).Encode(UpdateConnectionRequestDto{})
+			if err != nil {
+				suite.T().Fatal(err)
+			}
+
+			req := httptest.NewRequest(http.MethodPut, "/", &b)
+			req.SetPathValue("id", "101")
+
+			w := httptest.NewRecorder()
+
+			suite.TargetSupplier().Update(w, req)
+			res := w.Result()
+			defer func() {
+				if err := res.Body.Close(); err != nil {
+					panic("err on writing result")
+				}
+			}()
+
+			data, err := io.ReadAll(res.Body)
+			if err != nil {
+				suite.Fail("err on read response body")
+			}
+			suite.EqualValues(test.responseStatus, res.StatusCode)
+			if test.wantErr {
+				suite.Contains(string(data), test.expectedError.Error())
+			} else {
+				suite.Empty(string(data))
+			}
 		})
 	}
 }

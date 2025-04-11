@@ -65,7 +65,6 @@ func (c *Connection) CreatedAt() time.Time {
 func (c *Connection) ChecksumStr() string {
 	return hex.EncodeToString(c.Checksum())
 }
-
 func (c *Connection) Checksum() []byte {
 	h := md5.New()
 	_, _ = io.WriteString(h, c.key)
@@ -80,6 +79,19 @@ func (c *Connection) WithDBGeneratedValues(row query.SaveConnectionRow) *Connect
 		user:      c.user,
 		createdAt: row.CreatedAt.Time,
 	}
+}
+
+func (c *Connection) Update(key, user string) (*Connection, error) {
+	if err := validateUser(user); err != nil {
+		return nil, err
+	}
+	if err := validateKey(key); err != nil {
+		return nil, err
+	}
+
+	c.key = key
+	c.user = user
+	return c, nil
 }
 
 func validateKey(value string) error {

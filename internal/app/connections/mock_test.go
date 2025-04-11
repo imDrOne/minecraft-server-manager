@@ -86,3 +86,17 @@ func (mr *MockRepositoryMockRecorder) Save(arg0, arg1, arg2 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockRepository)(nil).Save), arg0, arg1, arg2)
 }
+
+// Update mocks base method.
+func (m *MockRepository) Update(ctx context.Context, id int64, updateConn connections0.UpdateConn) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Update", ctx, id, updateConn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Update indicates an expected call of Update.
+func (mr *MockRepositoryMockRecorder) Update(ctx, id, updateConn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockRepository)(nil).Update), ctx, id, updateConn)
+}
