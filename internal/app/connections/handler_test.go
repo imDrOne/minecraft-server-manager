@@ -260,6 +260,50 @@ func (suite *ConnectionHandlerTestSuite) TestConnectionController_Update_Busines
 	}
 }
 
+func TestConnectionController_FindById_InvalidPathId(t *testing.T) {
+	tests := []struct {
+		name  string
+		value string
+		error string
+	}{
+		{
+			name:  "empty id",
+			value: "",
+			error: "expected id - got empty string",
+		},
+		{
+			name:  "not numeric id",
+			value: "test",
+			error: "error during parsing id",
+		},
+	}
+
+	handler := originalHandler()
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req.SetPathValue("node-id", test.value)
+
+			w := httptest.NewRecorder()
+			handler.FindById(w, req)
+			res := w.Result()
+			defer func() {
+				if err := res.Body.Close(); err != nil {
+					panic("err on writing result")
+				}
+			}()
+
+			data, err := io.ReadAll(res.Body)
+			if err != nil {
+				require.Fail(t, "err on read response body")
+			}
+			require.EqualValues(t, http.StatusBadRequest, res.StatusCode)
+			require.Contains(t, string(data), test.error)
+		})
+	}
+}
+
 func Test(t *testing.T) {
 	suite.Run(t, new(ConnectionHandlerTestSuite))
 }
