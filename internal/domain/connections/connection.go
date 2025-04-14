@@ -96,11 +96,11 @@ func (c *Connection) Update(key, user string) (*Connection, error) {
 
 func validateKey(value string) error {
 	if value == "" {
-		return fmt.Errorf("%w: key is required", ErrValidationConnection)
+		return fmt.Errorf("key is required: %w", ErrValidationConnection)
 	}
 
 	if _, _, _, _, err := ssh.ParseAuthorizedKey([]byte(value)); err != nil {
-		return fmt.Errorf("%w: invalid key", ErrValidationConnection)
+		return fmt.Errorf("invalid key: %w", ErrValidationConnection)
 	}
 	return nil
 }
@@ -108,7 +108,7 @@ func validateKey(value string) error {
 func validateUser(value string) error {
 	re := regexp.MustCompile(`^[a-z][a-z0-9_-]{0,31}$`)
 	if !re.MatchString(value) {
-		return fmt.Errorf("%w: invalid user", ErrValidationConnection)
+		return fmt.Errorf("invalid user: %w", ErrValidationConnection)
 	}
 	return nil
 }
