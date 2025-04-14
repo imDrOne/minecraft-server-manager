@@ -16,9 +16,10 @@ func TestNewNode(t *testing.T) {
 		port    uint
 		wantErr bool
 	}{
-		{"Valid node", 1, "localhost", 50000, false},
-		{"Invalid host (empty)", 1, "", 50000, true},
-		{"Invalid port (too low)", 1, "localhost", 40000, true},
+		{"Valid node", 1, "localhost", 50_000, false},
+		{"Default ssh port", 1, "localhost", DefaultSshPort, false},
+		{"Invalid host (empty)", 1, "", 50_000, true},
+		{"Invalid port (too low)", 1, "localhost", 1023, true},
 		{"Invalid port (too high)", 1, "localhost", 70000, true},
 	}
 
@@ -43,8 +44,9 @@ func TestCreateNode(t *testing.T) {
 		wantErr bool
 	}{
 		{"Valid node", "localhost", 50000, false},
+		{"Default ssh port", "localhost", DefaultSshPort, false},
 		{"Invalid host (empty)", "", 50000, true},
-		{"Invalid port (too low)", "localhost", 40000, true},
+		{"Invalid port (too low)", "localhost", 1023, true},
 		{"Invalid port (too high)", "localhost", 70000, true},
 	}
 
@@ -137,7 +139,8 @@ func TestValidatePort(t *testing.T) {
 		wantErr bool
 	}{
 		{50000, false},
-		{49151, true},
+		{DefaultSshPort, false},
+		{1023, true},
 		{65536, true},
 	}
 

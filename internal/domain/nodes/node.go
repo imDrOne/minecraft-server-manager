@@ -16,6 +16,8 @@ var (
 	ErrNodeAlreadyExist = errors.New("already exists")
 )
 
+const DefaultSshPort = 22
+
 type Node struct {
 	id        int64
 	host      string
@@ -67,9 +69,9 @@ func validateHost(host string) error {
 	}
 	return nil
 }
-func validatePort(port uint) error {
-	if port <= 49152 || port >= 65535 {
-		return fmt.Errorf("%w: out of range 49152 - 65535", ErrValidationNode)
+func validatePort(port uint) (err error) {
+	if port == DefaultSshPort || (port >= 1024 && port <= 65_535) {
+		return
 	}
-	return nil
+	return fmt.Errorf("%w: out of range 49152 - 65535", ErrValidationNode)
 }
