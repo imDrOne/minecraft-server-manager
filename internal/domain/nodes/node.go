@@ -65,7 +65,7 @@ func (n *Node) CreatedAt() time.Time {
 
 func validateHost(host string) error {
 	if host == "" {
-		return fmt.Errorf("%w: host is required", ErrValidationNode)
+		return fmt.Errorf("host is required: %w", ErrValidationNode)
 	}
 	return nil
 }
@@ -73,5 +73,5 @@ func validatePort(port uint) (err error) {
 	if port == DefaultSshPort || (port >= 1024 && port <= 65_535) {
 		return
 	}
-	return fmt.Errorf("%w: out of range 49152 - 65535", ErrValidationNode)
+	return fmt.Errorf("out of range 1024 - 65535 or not 22: %w", ErrValidationNode)
 }
