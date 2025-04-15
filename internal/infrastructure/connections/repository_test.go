@@ -36,13 +36,9 @@ var (
 )
 
 var (
-	//go:embed test_key.pub
-	validSSHKey string
-	validConn   = query.Connection{
+	validConn = query.Connection{
 		ID:        1,
 		NodeID:    1,
-		Key:       validSSHKey,
-		Checksum:  "checksum",
 		User:      "test",
 		CreatedAt: pgtype.Timestamp{},
 		UpdatedAt: pgtype.Timestamp{},
@@ -50,9 +46,7 @@ var (
 	invalidConn = query.Connection{
 		ID:        2,
 		NodeID:    1,
-		Key:       "invalid-key",
-		Checksum:  "checksum",
-		User:      "test",
+		User:      "test!Test",
 		CreatedAt: pgtype.Timestamp{},
 		UpdatedAt: pgtype.Timestamp{},
 	}

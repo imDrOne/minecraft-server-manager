@@ -9,28 +9,22 @@ import (
 	"time"
 )
 
-//go:embed test_key.pub
-var validSSHKey string
-
 func TestNewConnection(t *testing.T) {
 	tests := []struct {
 		name      string
 		id        int64
-		key       string
 		user      string
 		createdAt time.Time
 		wantErr   bool
 	}{
-		{"Valid connection", 1, validSSHKey, "validuser", time.Now(), false},
-		{"Invalid user (special chars)", 1, validSSHKey, "Invalid-User!", time.Now(), true},
-		{"Invalid user (empty)", 1, validSSHKey, "", time.Now(), true},
-		{"Invalid key (empty)", 1, "", "validuser", time.Now(), true},
-		{"Invalid key (random string)", 1, "invalid-key", "validuser", time.Now(), true},
+		{"Valid connection", 1, "validuser", time.Now(), false},
+		{"Invalid user (special chars)", 1, "Invalid-User!", time.Now(), true},
+		{"Invalid user (empty)", 1, "", time.Now(), true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			conn, err := NewConnection(tt.id, 1, tt.key, tt.user, tt.createdAt)
+			conn, err := NewConnection(tt.id, 1, tt.user, tt.createdAt)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewConnection() error = %v, wantErr %v", err, tt.wantErr)
@@ -39,7 +33,6 @@ func TestNewConnection(t *testing.T) {
 			if !tt.wantErr {
 				assert.NotNil(t, conn, "Connection should not be nil")
 				assert.Equal(t, tt.id, conn.Id(), "ID should match")
-				assert.Equal(t, tt.key, conn.Key(), "Key should match")
 				assert.Equal(t, tt.user, conn.User(), "User should match")
 				assert.Equal(t, tt.createdAt, conn.CreatedAt(), "CreatedAt should match")
 			}
@@ -59,7 +52,7 @@ func TestWithDBGeneratedValues(t *testing.T) {
 			Valid:            true,
 		},
 	}
-	conn, err := NewConnection(0, 1, validSSHKey, "validuser", time.Time{})
+	conn, err := NewConnection(0, 1, "validuser", time.Time{})
 	assert.NoError(t, err, "Expected no error when creating a valid connection")
 
 	updatedConn := conn.WithDBGeneratedValues(dbRow)
@@ -72,36 +65,27 @@ func TestWithDBGeneratedValues(t *testing.T) {
 
 func TestCreateConnection(t *testing.T) {
 	tests := []struct {
-		name      string
-		key       string
-		user      string
-		expectErr bool
+		name    string
+		user    string
+		wantErr bool
 	}{
 		{
-			name:      "Valid key and user",
-			key:       validSSHKey,
-			user:      "validuser",
-			expectErr: false,
+			name:    "Valid user",
+			user:    "validuser",
+			wantErr: false,
 		},
 		{
-			name:      "Empty key",
-			key:       "",
-			user:      "validuser",
-			expectErr: true,
-		},
-		{
-			name:      "Invalid user",
-			key:       validSSHKey,
-			user:      "Invalid!User",
-			expectErr: true,
+			name:    "Invalid user",
+			user:    "Invalid!User",
+			wantErr: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			conn, err := CreateConnection(1, tt.key, tt.user)
-			if (err != nil) != tt.expectErr {
-				t.Errorf("Expected error: %v, got: %v", tt.expectErr, err)
+			conn, err := CreateConnection(1, tt.user)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Expected error: %v, got: %v", tt.wantErr, err)
 			}
 			if err == nil && conn == nil {
 				t.Errorf("Expected a valid connection, got nil")
@@ -111,35 +95,12 @@ func TestCreateConnection(t *testing.T) {
 }
 
 func TestCreateRootConnection(t *testing.T) {
-	tests := []struct {
-		name      string
-		key       string
-		expectErr bool
-	}{
-		{
-			name:      "Valid key",
-			key:       validSSHKey,
-			expectErr: false,
-		},
-		{
-			name:      "Empty key",
-			key:       "",
-			expectErr: true,
-		},
+	conn, err := CreateRootConnection(1)
+	if conn == nil || err != nil {
+		t.Errorf("Not expected error on creating root connection")
+		t.FailNow()
 	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			conn, err := CreateRootConnection(1, tt.key)
-			if (err != nil) != tt.expectErr {
-				t.Errorf("Expected error: %v, got: %v", tt.expectErr, err)
-			}
-			if err == nil && conn == nil {
-				t.Errorf("Expected a valid connection, got nil")
-			}
-			if err == nil && conn.user != RootUser {
-				t.Errorf("Expected 'root' user, got: %v", conn.user)
-			}
-		})
+	if conn.User() != RootUser {
+		t.Errorf("Expected user: %s, got %s", RootUser, conn.User())
 	}
 }

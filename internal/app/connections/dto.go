@@ -4,7 +4,6 @@ import "time"
 
 type CreateConnectionRequestDto struct {
 	NodeId int64  `json:"nodeId"`
-	Key    string `json:"key"`
 	User   string `json:"user"`
 }
 

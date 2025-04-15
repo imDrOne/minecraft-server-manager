@@ -17,9 +17,6 @@ import (
 	"testing"
 )
 
-//go:embed test_key.pub
-var validSSHKey string
-
 func originalHandler() *ConnectionController {
 	repo := connections.NewConnectionRepository(nil)
 	return &ConnectionController{repo}
@@ -102,13 +99,7 @@ func TestConnectionController_Create_InvalidDomain(t *testing.T) {
 		{
 			name: "invalid user",
 			payload: CreateConnectionRequestDto{
-				Key: validSSHKey,
-			},
-		},
-		{
-			name: "invalid key",
-			payload: CreateConnectionRequestDto{
-				User: "happy-user",
+				User: "invalid!!User&",
 			},
 		},
 	}

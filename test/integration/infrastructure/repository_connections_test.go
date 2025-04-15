@@ -12,9 +12,6 @@ import (
 	"testing"
 )
 
-//go:embed test_key.pub
-var validSSHKey string
-
 type ConnectionRepositoryTestSuite struct {
 	suite.Suite
 	db        *db.Postgres
@@ -60,19 +57,17 @@ func (suite *ConnectionRepositoryTestSuite) TearDownSuite() {
 
 func (suite *ConnectionRepositoryTestSuite) TestConnectionRepository_Save_CreatedConnection() {
 	expectedNodeId := int64(100)
-	expectedConn, _ := domain.CreateConnection(1, validSSHKey, "user")
+	expectedConn, _ := domain.CreateConnection(1, "user")
 	actual, _ := suite.repo.Save(suite.ctx, expectedNodeId, func() (*domain.Connection, error) {
 		return expectedConn, nil
 	})
 	suite.Require().NotEmpty(actual.Id())
 	suite.EqualValues(expectedConn.User(), actual.User())
-	suite.EqualValues(expectedConn.Key(), actual.Key())
-	suite.EqualValues(expectedConn.Checksum(), actual.Checksum())
 }
 
 func (suite *ConnectionRepositoryTestSuite) TestConnectionRepository_Update_UpdatedConnection() {
 	connId := int64(100)
-	expectedConn, _ := domain.CreateRootConnection(1, validSSHKey)
+	expectedConn, _ := domain.CreateRootConnection(1)
 	err := suite.repo.Update(suite.ctx, connId, func(c domain.Connection) (*domain.Connection, error) {
 		return expectedConn, nil
 	})
@@ -82,8 +77,6 @@ func (suite *ConnectionRepositoryTestSuite) TestConnectionRepository_Update_Upda
 	suite.Require().NoError(err)
 
 	suite.EqualValues(expectedConn.User(), actualConn.User())
-	suite.EqualValues(expectedConn.Key(), actualConn.Key())
-	suite.EqualValues(expectedConn.Checksum(), actualConn.Checksum())
 }
 
 func (suite *ConnectionRepositoryTestSuite) TestConnectionRepository_FindById_NodesConnections() {

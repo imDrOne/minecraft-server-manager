@@ -24,7 +24,7 @@ func (c ConnectionController) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	conn, err := c.repo.Save(r.Context(), connDto.NodeId, func() (*domain.Connection, error) {
-		return domain.CreateConnection(connDto.NodeId, connDto.Key, connDto.User)
+		return domain.CreateConnection(connDto.NodeId, connDto.User)
 	})
 	if err != nil {
 		msg := err.Error()
@@ -42,8 +42,8 @@ func (c ConnectionController) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	j, err := json.Marshal(ConnectionResponseDto{
-		Id:        conn.Id(),
-		Key:       conn.Key(),
+		Id: conn.Id(),
+		//Key:       conn.Key(),
 		User:      conn.User(),
 		CreatedAt: conn.CreatedAt(),
 	})
@@ -77,7 +77,7 @@ func (c ConnectionController) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = c.repo.Update(r.Context(), int64(id), func(connection domain.Connection) (*domain.Connection, error) {
-		return connection.Update(connDto.Key, connDto.User)
+		return connection.Update(connDto.User)
 	})
 
 	if err != nil {
@@ -126,8 +126,8 @@ func (c ConnectionController) FindById(w http.ResponseWriter, r *http.Request) {
 	connectionsDto := make([]ConnectionResponseDto, 0, len(connections))
 	for _, val := range connections {
 		connectionsDto = append(connectionsDto, ConnectionResponseDto{
-			Id:        val.Id(),
-			Key:       val.Key(),
+			Id: val.Id(),
+			//Key:       val.Key(),
 			User:      val.User(),
 			CreatedAt: val.CreatedAt(),
 		})

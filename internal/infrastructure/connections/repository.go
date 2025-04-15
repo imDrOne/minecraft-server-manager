@@ -27,14 +27,17 @@ type ConnectionRepository struct {
 	q ConnectionQueries
 }
 
+func NewConnectionRepository(p *pgxpool.Pool) *ConnectionRepository {
+	return &ConnectionRepository{q: query.New(p)}
+}
+
 func (r ConnectionRepository) Save(ctx context.Context, nodeId int64, createConn CreateConn) (*domain.Connection, error) {
 	conn, err := createConn()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create connection: %w", err)
 	}
 
-	checksum := conn.ChecksumStr()
-	idExists, err := r.q.CheckExistsConnection(ctx, checksum)
+	idExists, err := r.q.CheckExistsConnection(ctx, conn.User())
 	if err != nil {
 		return nil, fmt.Errorf("failed to check connection exist: %w", err)
 	}
@@ -43,10 +46,8 @@ func (r ConnectionRepository) Save(ctx context.Context, nodeId int64, createConn
 	}
 
 	data, err := r.q.SaveConnection(ctx, query.SaveConnectionParams{
-		NodeID:   nodeId,
-		Key:      conn.Key(),
-		User:     conn.User(),
-		Checksum: checksum,
+		NodeID: nodeId,
+		User:   conn.User(),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert connection: %w", err)
@@ -105,15 +106,10 @@ func (r ConnectionRepository) Update(ctx context.Context, id int64, updateConn U
 
 	err = r.q.UpdateConnectionById(ctx, query.UpdateConnectionByIdParams{
 		ID:   id,
-		Key:  conn.Key(),
 		User: conn.User(),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to update connection by id=%d query: %w", id, err)
 	}
 	return nil
-}
-
-func NewConnectionRepository(p *pgxpool.Pool) *ConnectionRepository {
-	return &ConnectionRepository{q: query.New(p)}
 }
