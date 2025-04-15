@@ -2,14 +2,24 @@ export
 	LOCAL_BIN:=$(CURDIR)/bin
 	PATH:=$(LOCAL_BIN):$(PATH)
 
+.PHONY: run test unit_test integration_test coverage_report
+
 run:
 	go mod tidy && go mod download && \
 	go run ./cmd/app
 
-test:
-	go test -v ./...
+unit_test:
+	go test -v ./internal/...
 
-.PHONY: run test
+integration_test:
+	go test -v ./test/integration...
+
+test: unit_test integration_test
+
+coverage_report:
+	go test -p=1 -coverpkg=./... -count=1 -coverprofile=.coverage.out ./...
+	go tool cover -html .coverage.out -o .coverage.html
+	open ./.coverage.html
 
 # Prepare local environment
 .PHONY: up-docker down-docker
@@ -22,6 +32,7 @@ down-docker:
 
 # Migrations
 
+# Migrations
 .PHONY: migrate-create migrate-up
 
 migrate-create:

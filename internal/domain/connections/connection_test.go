@@ -30,7 +30,7 @@ func TestNewConnection(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			conn, err := NewConnection(tt.id, tt.key, tt.user, tt.createdAt)
+			conn, err := NewConnection(tt.id, 1, tt.key, tt.user, tt.createdAt)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewConnection() error = %v, wantErr %v", err, tt.wantErr)
@@ -59,7 +59,7 @@ func TestWithDBGeneratedValues(t *testing.T) {
 			Valid:            true,
 		},
 	}
-	conn, err := NewConnection(0, validSSHKey, "validuser", time.Time{})
+	conn, err := NewConnection(0, 1, validSSHKey, "validuser", time.Time{})
 	assert.NoError(t, err, "Expected no error when creating a valid connection")
 
 	updatedConn := conn.WithDBGeneratedValues(dbRow)
@@ -99,7 +99,7 @@ func TestCreateConnection(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			conn, err := CreateConnection(tt.key, tt.user)
+			conn, err := CreateConnection(1, tt.key, tt.user)
 			if (err != nil) != tt.expectErr {
 				t.Errorf("Expected error: %v, got: %v", tt.expectErr, err)
 			}
@@ -130,7 +130,7 @@ func TestCreateRootConnection(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			conn, err := CreateRootConnection(tt.key)
+			conn, err := CreateRootConnection(1, tt.key)
 			if (err != nil) != tt.expectErr {
 				t.Errorf("Expected error: %v, got: %v", tt.expectErr, err)
 			}

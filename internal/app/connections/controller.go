@@ -24,7 +24,7 @@ func (c ConnectionController) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	conn, err := c.repo.Save(r.Context(), connDto.NodeId, func() (*domain.Connection, error) {
-		return domain.CreateConnection(connDto.Key, connDto.User)
+		return domain.CreateConnection(connDto.NodeId, connDto.Key, connDto.User)
 	})
 	if err != nil {
 		msg := err.Error()

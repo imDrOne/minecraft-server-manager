@@ -60,7 +60,7 @@ func (suite *ConnectionRepositoryTestSuite) TearDownSuite() {
 
 func (suite *ConnectionRepositoryTestSuite) TestConnectionRepository_Save_CreatedConnection() {
 	expectedNodeId := int64(100)
-	expectedConn, _ := domain.CreateConnection(validSSHKey, "user")
+	expectedConn, _ := domain.CreateConnection(1, validSSHKey, "user")
 	actual, _ := suite.repo.Save(suite.ctx, expectedNodeId, func() (*domain.Connection, error) {
 		return expectedConn, nil
 	})
@@ -72,7 +72,7 @@ func (suite *ConnectionRepositoryTestSuite) TestConnectionRepository_Save_Create
 
 func (suite *ConnectionRepositoryTestSuite) TestConnectionRepository_Update_UpdatedConnection() {
 	connId := int64(100)
-	expectedConn, _ := domain.CreateRootConnection(validSSHKey)
+	expectedConn, _ := domain.CreateRootConnection(1, validSSHKey)
 	err := suite.repo.Update(suite.ctx, connId, func(c domain.Connection) (*domain.Connection, error) {
 		return expectedConn, nil
 	})

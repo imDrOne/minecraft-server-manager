@@ -22,12 +22,13 @@ var (
 
 type Connection struct {
 	id        int64
+	nodeId    int64
 	key       string
 	user      string
 	createdAt time.Time
 }
 
-func NewConnection(id int64, key string, user string, createdAt time.Time) (*Connection, error) {
+func NewConnection(id, nodeId int64, key string, user string, createdAt time.Time) (*Connection, error) {
 	if err := validateUser(user); err != nil {
 		return nil, err
 	}
@@ -35,23 +36,26 @@ func NewConnection(id int64, key string, user string, createdAt time.Time) (*Con
 		return nil, err
 	}
 
-	return &Connection{id: id, key: key, user: user, createdAt: createdAt}, nil
+	return &Connection{id: id, nodeId: nodeId, key: key, user: user, createdAt: createdAt}, nil
 }
 
-func CreateConnection(key string, user string) (*Connection, error) {
-	return NewConnection(0, key, user, time.Time{})
+func CreateConnection(nodeId int64, key string, user string) (*Connection, error) {
+	return NewConnection(0, nodeId, key, user, time.Time{})
 }
 
-func CreateRootConnection(key string) (*Connection, error) {
-	return NewConnection(0, key, RootUser, time.Time{})
+func CreateRootConnection(nodeId int64, key string) (*Connection, error) {
+	return NewConnection(0, nodeId, key, RootUser, time.Time{})
 }
 
 func FromDbModel(c query.Connection) (*Connection, error) {
-	return NewConnection(c.ID, c.Key, c.User, c.CreatedAt.Time)
+	return NewConnection(c.ID, c.NodeID, c.Key, c.User, c.CreatedAt.Time)
 }
 
 func (c *Connection) Id() int64 {
 	return c.id
+}
+func (c *Connection) NodeId() int64 {
+	return c.nodeId
 }
 func (c *Connection) Key() string {
 	return c.key
@@ -75,6 +79,7 @@ func (c *Connection) Checksum() []byte {
 func (c *Connection) WithDBGeneratedValues(row query.SaveConnectionRow) *Connection {
 	return &Connection{
 		id:        row.ID,
+		nodeId:    c.nodeId,
 		key:       c.key,
 		user:      c.user,
 		createdAt: row.CreatedAt.Time,
