@@ -11,6 +11,7 @@ type Config struct {
 	App        `yaml:"app"`
 	HTTPServer `yaml:"http-server"`
 	DB         `yaml:"database"`
+	SSHKeygen  `yaml:"ssh-keygen"`
 }
 
 type App struct {
@@ -31,6 +32,12 @@ type DB struct {
 	MaxPoolSiz   int           `yaml:"max-pool-size" env-default:"2"`
 	ConnAttempts int           `yaml:"conn-attempts" env-default:"3"`
 	ConnTimeout  time.Duration `yaml:"conn-timeout" env-default:"30s"`
+}
+
+type SSHKeygen struct {
+	Bits       int    `yaml:"bits" env-default:"2048"`
+	Passphrase string `yaml:"passphrase" env:"SSH_KEY_PASS" env-default:"secret"`
+	Salt       string `yaml:"salt" env:"SSH_KEY_SALT" env-default:"salt"`
 }
 
 func New() *Config {
