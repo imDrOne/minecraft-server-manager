@@ -10,3 +10,11 @@ database:
   user: happy_miner
   password: happy_miner
   name: server_manager
+
+
+vault:
+  address: localhost
+  port: 8200
+  token: root
+  connections:
+    path: secrets/ssh-keys
