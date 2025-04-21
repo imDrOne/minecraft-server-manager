@@ -17,16 +17,11 @@ type Options struct {
 }
 
 func New(cfg config.Vault) (Options, error) {
-	client, err := vault.New(
-		vault.WithAddress(fmt.Sprintf("%s:%s", cfg.Address, cfg.Port)),
-		vault.WithRequestTimeout(requestTimeout),
-	)
+	host := fmt.Sprintf("%s:%s", cfg.Address, cfg.Port)
+
+	client, err := create(host, cfg.Token)
 
 	if err != nil {
-		return Options{}, err
-	}
-
-	if err := client.SetToken(cfg.Token); err != nil {
 		return Options{}, err
 	}
 
@@ -34,4 +29,21 @@ func New(cfg config.Vault) (Options, error) {
 		cfg,
 		client,
 	}, err
+}
+
+func create(host string, token string) (*vault.Client, error) {
+	client, err := vault.New(
+		vault.WithAddress(host),
+		vault.WithRequestTimeout(requestTimeout),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err := client.SetToken(token); err != nil {
+		return nil, err
+	}
+
+	return client, nil
 }
