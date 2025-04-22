@@ -42,7 +42,8 @@ type Vault struct {
 }
 
 type ConnectionsVault struct {
-	Path string `yaml:"path" env:"VAULT_PATH"`
+	Path      string `yaml:"path" env:"VAULT_PATH"`
+	MountPath string `yaml:"mount-path" env:"VAULT_MOUNT_PATH"`
 }
 
 func New() *Config {

@@ -17,4 +17,5 @@ vault:
   port: 8200
   token: root
   connections:
-    path: secrets/ssh-keys
+    path: ssh-keys/
+    mount-path: secret/

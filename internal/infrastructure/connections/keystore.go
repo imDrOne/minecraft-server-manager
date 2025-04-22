@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/hashicorp/vault-client-go"
+	"github.com/hashicorp/vault-client-go/schema"
 	"github.com/imDrOne/minecraft-server-manager/config"
 	"path/filepath"
 	"strconv"
@@ -38,13 +39,21 @@ type KeyStoreClient struct {
 	config.ConnectionsVault
 }
 
+func NewKeyStoreClient(vault *vault.Client, cfg config.ConnectionsVault) KeyStoreClient {
+	return KeyStoreClient{
+		vault,
+		cfg,
+	}
+}
+
 func (cl *KeyStoreClient) Save(ctx context.Context, create func() (int, KeyPair)) error {
 
 	id, keypair := create()
-	_, err := cl.vault.Write(ctx, filepath.Join(cl.Path, strconv.Itoa(id)), map[string]any{
-		privateKey: keypair.Private,
-		publicKey:  keypair.Public,
-	})
+	_, err := cl.vault.Secrets.KvV2Write(ctx, cl.setPath(id), schema.KvV2WriteRequest{
+		Data: map[string]any{
+			privateKey: keypair.Private,
+			publicKey:  keypair.Public,
+		}}, vault.WithMountPath(cl.MountPath))
 
 	if err != nil {
 		return fmt.Errorf("%w: %s", SaveKeyPairError, err)
@@ -54,17 +63,17 @@ func (cl *KeyStoreClient) Save(ctx context.Context, create func() (int, KeyPair)
 
 func (cl *KeyStoreClient) Get(ctx context.Context, id int) (KeyPair, error) {
 
-	result, err := cl.vault.Read(ctx, filepath.Join(cl.Path, strconv.Itoa(id)))
+	result, err := cl.vault.Secrets.KvV2Read(ctx, cl.setPath(id), vault.WithMountPath(cl.MountPath))
 	if err != nil {
 		return KeyPair{}, fmt.Errorf("%w: %s", GetKeyPairError, err)
 	}
 
-	privateSsh, ok := result.Data[privateKey].(string)
+	privateSsh, ok := result.Data.Data[privateKey].(string)
 	if !ok {
 		return KeyPair{}, GetPrivateKeyError
 	}
 
-	publicSsh, ok := result.Data[publicKey].(string)
+	publicSsh, ok := result.Data.Data[publicKey].(string)
 
 	if !ok {
 		return KeyPair{}, GetPublicKeyError
@@ -73,4 +82,8 @@ func (cl *KeyStoreClient) Get(ctx context.Context, id int) (KeyPair, error) {
 		privateSsh,
 		publicSsh,
 	}, nil
+}
+
+func (cl *KeyStoreClient) setPath(id int) string {
+	return filepath.Join(cl.Path, strconv.Itoa(id))
 }
