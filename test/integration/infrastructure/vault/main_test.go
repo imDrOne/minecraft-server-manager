@@ -1,4 +1,4 @@
-package vaultkeystores
+package vault
 
 import (
 	"context"

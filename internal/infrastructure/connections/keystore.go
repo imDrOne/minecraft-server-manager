@@ -29,43 +29,46 @@ type KeyPair struct {
 	Public  string
 }
 
-type Keystore interface {
-	Save(context context.Context, create func() (int, KeyPair)) error
+func (r KeyPair) Value() map[string]any {
+	return map[string]any{
+		privateKey: r.Private,
+		publicKey:  r.Public,
+	}
+}
+
+type KeyStore interface {
+	Save(context context.Context, create func() KeyPair) error
 	Get(context context.Context, id int) (KeyPair, error)
 }
 
 type KeyStoreClient struct {
 	vault *vault.Client
-	config.ConnectionsVault
+	cgf   config.Vault
 }
 
-func NewKeyStoreClient(vault *vault.Client, cfg config.ConnectionsVault) KeyStoreClient {
+func NewKeyStoreClient(vault *vault.Client, cfg config.Vault) KeyStoreClient {
 	return KeyStoreClient{
 		vault,
 		cfg,
 	}
 }
 
-func (cl *KeyStoreClient) Save(ctx context.Context, create func() (int, KeyPair)) error {
-
+func (r *KeyStoreClient) Save(ctx context.Context, create func() (int, KeyPair)) error {
 	id, keypair := create()
-	_, err := cl.vault.Secrets.KvV2Write(ctx, cl.setPath(id), schema.KvV2WriteRequest{
-		Data: map[string]any{
-			privateKey: keypair.Private,
-			publicKey:  keypair.Public,
-		}}, vault.WithMountPath(cl.MountPath))
-
+	_, err := r.vault.Secrets.KvV2Write(ctx, r.supplySavePath(id), schema.KvV2WriteRequest{
+		Data: keypair.Value(),
+	}, vault.WithMountPath(r.cgf.MountPath))
 	if err != nil {
-		return fmt.Errorf("%w: %s", SaveKeyPairError, err)
+		return fmt.Errorf("%w: %w", SaveKeyPairError, err)
 	}
+
 	return nil
 }
 
-func (cl *KeyStoreClient) Get(ctx context.Context, id int) (KeyPair, error) {
-
-	result, err := cl.vault.Secrets.KvV2Read(ctx, cl.setPath(id), vault.WithMountPath(cl.MountPath))
+func (r *KeyStoreClient) Get(ctx context.Context, id int) (KeyPair, error) {
+	result, err := r.vault.Secrets.KvV2Read(ctx, r.supplySavePath(id), vault.WithMountPath(r.cgf.MountPath))
 	if err != nil {
-		return KeyPair{}, fmt.Errorf("%w: %s", GetKeyPairError, err)
+		return KeyPair{}, fmt.Errorf("%w: %w", GetKeyPairError, err)
 	}
 
 	privateSsh, ok := result.Data.Data[privateKey].(string)
@@ -74,16 +77,16 @@ func (cl *KeyStoreClient) Get(ctx context.Context, id int) (KeyPair, error) {
 	}
 
 	publicSsh, ok := result.Data.Data[publicKey].(string)
-
 	if !ok {
 		return KeyPair{}, GetPublicKeyError
 	}
+
 	return KeyPair{
 		privateSsh,
 		publicSsh,
 	}, nil
 }
 
-func (cl *KeyStoreClient) setPath(id int) string {
-	return filepath.Join(cl.Path, strconv.Itoa(id))
+func (r *KeyStoreClient) supplySavePath(id int) string {
+	return filepath.Join(r.cgf.Connections.Path, strconv.Itoa(id))
 }

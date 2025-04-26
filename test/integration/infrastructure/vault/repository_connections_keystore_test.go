@@ -1,4 +1,4 @@
-package vaultkeystores
+package vault
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 	"github.com/imDrOne/minecraft-server-manager/internal/infrastructure/connections"
 	"github.com/imDrOne/minecraft-server-manager/pkg/vault"
 	"github.com/imDrOne/minecraft-server-manager/test/lib"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"testing"
 )
@@ -20,7 +19,8 @@ type ConnectionsKeyStoreTestSuite struct {
 
 func (suite *ConnectionsKeyStoreTestSuite) SetupSuite() {
 
-	vaultClient, err := vault.New(lib.VaultHostAddress, func(cl *client.Client) error {
+	vaultContainer := lib.GetVaultContainer()
+	vaultClient, err := vault.New(vaultContainer.HostAddress, func(cl *client.Client) error {
 		return cl.SetToken("root")
 	})
 	if err != nil {
@@ -31,29 +31,30 @@ func (suite *ConnectionsKeyStoreTestSuite) SetupSuite() {
 
 	suite.keyStoreClient = connections.NewKeyStoreClient(
 		vaultClient,
-		config.ConnectionsVault{
-			Path:      "ssh-keys/",
-			MountPath: "/secret",
+		config.Vault{
+			MountPath: "secret",
+			Connections: config.ConnectionsVault{
+				Path: "ssh-keys",
+			},
 		},
 	)
 
 }
 
 func (suite *ConnectionsKeyStoreTestSuite) TestConnectionsKeyStore_SaveAndGetPairs() {
-	pair := connections.KeyPair{
-		Private: "1",
-		Public:  "2",
+	expected := connections.KeyPair{
+		Private: "0db52c7b-f398-479d-b52c-7bf398479d84",
+		Public:  "bf5d0b43-6b80-479a-9d0b-436b80a79ac8",
 	}
 	err := suite.keyStoreClient.Save(suite.ctx, func() (int, connections.KeyPair) {
-		return 1, pair
+		return 1, expected
 	})
+	suite.NoError(err)
 
-	require.NoError(suite.T(), err)
+	actual, err := suite.keyStoreClient.Get(suite.ctx, 1)
 
-	newPair, err := suite.keyStoreClient.Get(suite.ctx, 1)
-
-	require.NoError(suite.T(), err)
-	require.Equal(suite.T(), pair, newPair)
+	suite.NoError(err)
+	suite.Equal(expected, actual)
 }
 
 func TestRepositoryConnectionsKeystoreSuite(t *testing.T) {

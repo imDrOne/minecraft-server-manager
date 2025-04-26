@@ -38,12 +38,12 @@ type Vault struct {
 	Address     string           `yaml:"address" env-default:"localhost"`
 	Port        string           `yaml:"port" env-default:"8200"`
 	Token       string           `yaml:"token" env:"VAULT_TOKEN"`
+	MountPath   string           `yaml:"mount-path" env:"VAULT_MOUNT_PATH"`
 	Connections ConnectionsVault `yaml:"connection"`
 }
 
 type ConnectionsVault struct {
-	Path      string `yaml:"path" env:"VAULT_PATH"`
-	MountPath string `yaml:"mount-path" env:"VAULT_MOUNT_PATH"`
+	Path string `yaml:"path" env:"VAULT_CONNECTIONS_PATH"`
 }
 
 func New() *Config {
@@ -52,7 +52,7 @@ func New() *Config {
 	flag.StringVar(&env, "env", "local", "Application profile")
 	flag.Parse()
 
-	if err := cleanenv.ReadConfig(fmt.Sprintf("../config.%s.yaml", env), &cfg); err != nil {
+	if err := cleanenv.ReadConfig(fmt.Sprintf("./config.%s.yaml", env), &cfg); err != nil {
 		panic(fmt.Errorf("fatal error config file: %w", err))
 	}
 

@@ -4,24 +4,49 @@ import (
 	"context"
 	"github.com/testcontainers/testcontainers-go/modules/vault"
 	"log/slog"
+	"sync"
+	"sync/atomic"
 )
 
 var (
-	VaultHostAddress string
+	onceVault      sync.Once
+	vaultContainer atomic.Value
 )
 
-func StartVaultContainer(ctx context.Context) error {
-	vaultContainer, err := vault.Run(ctx, "hashicorp/vault:1.13.0", vault.WithToken("root"))
+type VaultContainer struct {
+	*vault.VaultContainer
+	HostAddress string
+}
 
-	if err != nil {
-		slog.Error("failed to start container: %s", err)
-		return err
-	}
-	VaultHostAddress, err = vaultContainer.HttpHostAddress(ctx)
-	if err != nil {
-		slog.Error("failed to get host address: %s", err)
-		return err
-	}
+func StartVaultContainer(ctx context.Context) (err error) {
+	onceVault.Do(func() {
+		var container *vault.VaultContainer
+		container, err = vault.Run(ctx, "hashicorp/vault:1.13.0", vault.WithToken("root"))
+		if err != nil {
+			slog.Error("failed to start container: %s", err)
+			return
+		}
 
-	return nil
+		var addr string
+		addr, err = container.HttpHostAddress(ctx)
+		if err != nil {
+			slog.Error("failed to get host address: %s", err)
+			return
+		}
+
+		vaultContainer.Store(VaultContainer{
+			VaultContainer: container,
+			HostAddress:    addr,
+		})
+	})
+
+	return err
+}
+
+func GetVaultContainer() VaultContainer {
+	value := vaultContainer.Load()
+	if value == nil {
+		return VaultContainer{}
+	}
+	return value.(VaultContainer)
 }

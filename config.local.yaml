@@ -16,6 +16,6 @@ vault:
   address: localhost
   port: 8200
   token: root
+  mount-path: secret
   connections:
-    path: ssh-keys/
-    mount-path: secret/
+    path: ssh-keys

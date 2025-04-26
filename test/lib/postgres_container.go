@@ -7,13 +7,13 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 	"log/slog"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
 var (
-	once          sync.Once
-	pgContainer   *postgres.PostgresContainer
-	connectionStr string
+	oncePg      sync.Once
+	pgContainer atomic.Value
 )
 
 const waitLogStr = "database system is ready to accept connections"
@@ -23,10 +23,10 @@ type PgContainer struct {
 	ConnectionString string
 }
 
-func StartPostgresContainer(ctx context.Context) (*PgContainer, error) {
-	var err error
-	once.Do(func() {
-		pgContainer, err = postgres.Run(
+func StartPostgresContainer(ctx context.Context) (err error) {
+	oncePg.Do(func() {
+		var container *postgres.PostgresContainer
+		container, err = postgres.Run(
 			ctx,
 			"postgres:17.3-alpine",
 			testcontainers.WithWaitStrategy(
@@ -39,28 +39,25 @@ func StartPostgresContainer(ctx context.Context) (*PgContainer, error) {
 			return
 		}
 
-		connectionStr, err = pgContainer.ConnectionString(ctx, "sslmode=disable")
+		var connectionStr string
+		connectionStr, err = container.ConnectionString(ctx, "sslmode=disable")
 		if err != nil {
 			return
 		}
+
+		pgContainer.Store(PgContainer{
+			PostgresContainer: container,
+			ConnectionString:  connectionStr,
+		})
 	})
 
-	return &PgContainer{
-		PostgresContainer: pgContainer,
-		ConnectionString:  connectionStr,
-	}, nil
+	return err
 }
 
-func StopPostgresContainer(ctx context.Context) {
-	if pgContainer != nil {
-		if err := pgContainer.Terminate(ctx); err != nil {
-			slog.Error(err.Error())
-			return
-		}
-		once = sync.Once{}
+func GetPgContainer() PgContainer {
+	value := pgContainer.Load()
+	if value == nil {
+		return PgContainer{}
 	}
-}
-
-func GetPgConnectionString() string {
-	return connectionStr
+	return value.(PgContainer)
 }
