@@ -46,8 +46,8 @@ func (suite *ConnectionsKeyStoreTestSuite) TestConnectionsKeyStore_SaveAndGetPai
 		Private: "0db52c7b-f398-479d-b52c-7bf398479d84",
 		Public:  "bf5d0b43-6b80-479a-9d0b-436b80a79ac8",
 	}
-	err := suite.keyStoreClient.Save(suite.ctx, func() (int, connssh.KeyPair) {
-		return 1, expected
+	err := suite.keyStoreClient.Save(suite.ctx, 1, func() (connssh.KeyPair, error) {
+		return expected, nil
 	})
 	suite.NoError(err)
 

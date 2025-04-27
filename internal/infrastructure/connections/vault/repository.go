@@ -20,7 +20,7 @@ var (
 )
 
 type KeyStore interface {
-	Save(context context.Context, create func() KeyPair) error
+	Save(context context.Context, connId int, create func() (KeyPair, error)) error
 	Get(context context.Context, id int) (KeyPair, error)
 }
 
@@ -36,9 +36,13 @@ func NewKeyStoreClient(vault *vault.Client, cfg config.Vault) KeyStoreClient {
 	}
 }
 
-func (r *KeyStoreClient) Save(ctx context.Context, create func() (int, KeyPair)) error {
-	id, keypair := create()
-	_, err := r.vault.Secrets.KvV2Write(ctx, r.supplySavePath(id), schema.KvV2WriteRequest{
+func (r *KeyStoreClient) Save(ctx context.Context, connId int, create func() (KeyPair, error)) error {
+	keypair, err := create()
+	if err != nil {
+		return fmt.Errorf("error on creating keypair: %w", err)
+	}
+
+	_, err = r.vault.Secrets.KvV2Write(ctx, r.supplySavePath(connId), schema.KvV2WriteRequest{
 		Data: map[string]any{
 			privateKey: keypair.Private,
 			publicKey:  keypair.Public,
