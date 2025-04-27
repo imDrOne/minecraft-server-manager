@@ -11,31 +11,11 @@ const (
 	requestTimeout = 30 * time.Second
 )
 
-type Options struct {
-	config config.Vault
-	client *vault.Client
-}
+type ClientSetup func(client *vault.Client) error
 
-func WithConfig(cfg config.Vault) (Options, error) {
-	host := fmt.Sprintf("%s:%s", cfg.Address, cfg.Port)
-
-	client, err := New(host, func(client *vault.Client) error {
-		return client.SetToken(cfg.Token)
-	})
-
-	if err != nil {
-		return Options{}, err
-	}
-
-	return Options{
-		cfg,
-		client,
-	}, err
-}
-
-func New(host string, setup ...ClientSetup) (*vault.Client, error) {
+func New(addr string, setup ...ClientSetup) (*vault.Client, error) {
 	client, err := vault.New(
-		vault.WithAddress(host),
+		vault.WithAddress(addr),
 		vault.WithRequestTimeout(requestTimeout),
 	)
 
@@ -53,4 +33,15 @@ func New(host string, setup ...ClientSetup) (*vault.Client, error) {
 	return client, nil
 }
 
-type ClientSetup func(client *vault.Client) error
+func NewWithConfig(cfg config.Vault) (*vault.Client, error) {
+	addr := fmt.Sprintf("%s:%s", cfg.Address, cfg.Port)
+
+	client, err := New(addr, func(client *vault.Client) error {
+		return client.SetToken(cfg.Token)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return client, err
+}

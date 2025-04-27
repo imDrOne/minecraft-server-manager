@@ -1,4 +1,4 @@
-package connections
+package vault
 
 import (
 	"context"
@@ -11,11 +11,6 @@ import (
 	"strconv"
 )
 
-const (
-	privateKey = "private"
-	publicKey  = "public"
-)
-
 var (
 	SaveKeyPairError = errors.New("failed to save key pair")
 	GetKeyPairError  = errors.New("failed to get key pair")
@@ -23,18 +18,6 @@ var (
 	GetPrivateKeyError = errors.New("failed to get private key")
 	GetPublicKeyError  = errors.New("failed to get public key")
 )
-
-type KeyPair struct {
-	Private string
-	Public  string
-}
-
-func (r KeyPair) Value() map[string]any {
-	return map[string]any{
-		privateKey: r.Private,
-		publicKey:  r.Public,
-	}
-}
 
 type KeyStore interface {
 	Save(context context.Context, create func() KeyPair) error
@@ -56,7 +39,10 @@ func NewKeyStoreClient(vault *vault.Client, cfg config.Vault) KeyStoreClient {
 func (r *KeyStoreClient) Save(ctx context.Context, create func() (int, KeyPair)) error {
 	id, keypair := create()
 	_, err := r.vault.Secrets.KvV2Write(ctx, r.supplySavePath(id), schema.KvV2WriteRequest{
-		Data: keypair.Value(),
+		Data: map[string]any{
+			privateKey: keypair.Private,
+			publicKey:  keypair.Public,
+		},
 	}, vault.WithMountPath(r.cgf.MountPath))
 	if err != nil {
 		return fmt.Errorf("%w: %w", SaveKeyPairError, err)
