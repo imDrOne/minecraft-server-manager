@@ -11,6 +11,7 @@ type Config struct {
 	App        `yaml:"app"`
 	HTTPServer `yaml:"http-server"`
 	DB         `yaml:"database"`
+	Vault      `yaml:"vault"`
 	SSHKeygen  `yaml:"ssh-keygen"`
 }
 
@@ -38,6 +39,18 @@ type SSHKeygen struct {
 	Bits       int    `yaml:"bits" env-default:"2048"`
 	Passphrase string `yaml:"passphrase" env:"SSH_KEY_PASS" env-default:"secret"`
 	Salt       string `yaml:"salt" env:"SSH_KEY_SALT" env-default:"salt"`
+}
+
+type Vault struct {
+	Address     string           `yaml:"address" env-default:"localhost"`
+	Port        string           `yaml:"port" env-default:"8200"`
+	Token       string           `yaml:"token" env:"VAULT_TOKEN"`
+	MountPath   string           `yaml:"mount-path" env:"VAULT_MOUNT_PATH"`
+	Connections ConnectionsVault `yaml:"connection"`
+}
+
+type ConnectionsVault struct {
+	Path string `yaml:"path" env:"VAULT_CONNECTIONS_PATH"`
 }
 
 func New() *Config {

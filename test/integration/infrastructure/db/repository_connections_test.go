@@ -1,4 +1,4 @@
-package infrastructure
+package db
 
 import (
 	"context"
@@ -23,8 +23,8 @@ type ConnectionRepositoryTestSuite struct {
 func (suite *ConnectionRepositoryTestSuite) SetupSuite() {
 	var err error
 	suite.ctx = context.Background()
-
-	suite.db, err = db.NewWithConnectionString(lib.GetPgConnectionString())
+	pgContainer := lib.GetPgContainer()
+	suite.db, err = db.NewWithConnectionString(pgContainer.ConnectionString)
 	suite.Require().NoError(err)
 
 	suite.repo = connections.NewConnectionRepository(suite.db.Pool)
