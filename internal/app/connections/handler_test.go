@@ -6,9 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	domain "github.com/imDrOne/minecraft-server-manager/internal/domain/connections"
-	"github.com/imDrOne/minecraft-server-manager/internal/infrastructure/connections"
+	conndb "github.com/imDrOne/minecraft-server-manager/internal/infrastructure/connections/db"
 	testutils "github.com/imDrOne/minecraft-server-manager/internal/pkg/test"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"io"
@@ -16,11 +15,6 @@ import (
 	"net/http/httptest"
 	"testing"
 )
-
-func originalHandler() *ConnectionController {
-	repo := connections.NewConnectionRepository(nil)
-	return &ConnectionController{repo}
-}
 
 type ConnectionHandlerTestSuite struct {
 	testutils.Suite[*MockRepository, *ConnectionController]
@@ -37,10 +31,10 @@ func (suite *ConnectionHandlerTestSuite) SetupTest() {
 	)
 }
 
-func TestConnectionHandler_Create_EmptyBody(t *testing.T) {
+func (suite *ConnectionHandlerTestSuite) TestConnectionHandler_Create_EmptyBody() {
 	req := httptest.NewRequest(http.MethodPost, "/", nil)
 	w := httptest.NewRecorder()
-	handler := originalHandler()
+	handler := suite.TargetSupplier()
 	handler.Create(w, req)
 	res := w.Result()
 	defer func() {
@@ -51,10 +45,10 @@ func TestConnectionHandler_Create_EmptyBody(t *testing.T) {
 
 	data, err := io.ReadAll(res.Body)
 	if err != nil {
-		require.Fail(t, "err on read response body")
+		suite.Fail("err on read response body")
 	}
-	require.EqualValues(t, http.StatusBadRequest, res.StatusCode)
-	require.Contains(t, string(data), "invalid json")
+	suite.EqualValues(http.StatusBadRequest, res.StatusCode)
+	suite.Contains(string(data), "invalid json")
 }
 
 func (suite *ConnectionHandlerTestSuite) TestConnectionHandler_Create_DuplicateErr() {
@@ -87,31 +81,40 @@ func (suite *ConnectionHandlerTestSuite) TestConnectionHandler_Create_DuplicateE
 	suite.Contains(string(data), domain.ErrConnectionAlreadyExists.Error())
 }
 
-func TestConnectionController_Create_InvalidDomain(t *testing.T) {
+func (suite *ConnectionHandlerTestSuite) TestConnectionController_Create_InvalidDomain() {
 	tests := []struct {
-		name    string
-		payload CreateConnectionRequestDto
+		name        string
+		errorText   string
+		isEmptyBody bool
+		payload     CreateConnectionRequestDto
 	}{
 		{
-			name:    "empty dto",
-			payload: CreateConnectionRequestDto{},
+			name:        "empty dto",
+			isEmptyBody: true,
 		},
 		{
-			name: "invalid user",
+			name: "invalid user (try 1)",
 			payload: CreateConnectionRequestDto{
 				User: "invalid!!User&",
 			},
 		},
+		{
+			name:    "invalid user (try 2)",
+			payload: CreateConnectionRequestDto{},
+		},
 	}
 
-	handler := originalHandler()
+	handler := suite.TargetSupplier()
+	handler.repo = conndb.NewConnectionRepository(nil)
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+		suite.Run(test.name, func() {
 			var b bytes.Buffer
-			err := json.NewEncoder(&b).Encode(test.payload)
-			if err != nil {
-				t.Fatal(err)
+			if !test.isEmptyBody {
+				err := json.NewEncoder(&b).Encode(test.payload)
+				if err != nil {
+					suite.FailNow(err.Error())
+				}
 			}
 
 			req := httptest.NewRequest(http.MethodPost, "/", &b)
@@ -126,15 +129,19 @@ func TestConnectionController_Create_InvalidDomain(t *testing.T) {
 
 			data, err := io.ReadAll(res.Body)
 			if err != nil {
-				t.Error("err on read response body")
+				suite.Error(err, "err on read response body")
 			}
-			require.EqualValues(t, http.StatusBadRequest, res.StatusCode)
-			require.Contains(t, string(data), domain.ErrValidationConnection.Error())
+			suite.EqualValues(http.StatusBadRequest, res.StatusCode)
+			if test.isEmptyBody {
+				suite.Contains(string(data), "invalid json")
+			} else {
+				suite.Contains(string(data), domain.ErrValidationConnection.Error())
+			}
 		})
 	}
 }
 
-func TestConnectionController_Create_InvalidPathId(t *testing.T) {
+func (suite *ConnectionHandlerTestSuite) TestConnectionController_Create_InvalidPathId() {
 	tests := []struct {
 		name  string
 		value string
@@ -152,10 +159,10 @@ func TestConnectionController_Create_InvalidPathId(t *testing.T) {
 		},
 	}
 
-	handler := originalHandler()
+	handler := suite.TargetSupplier()
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+		suite.Run(test.name, func() {
 			req := httptest.NewRequest(http.MethodPut, "/", nil)
 			req.SetPathValue("id", test.value)
 
@@ -170,10 +177,10 @@ func TestConnectionController_Create_InvalidPathId(t *testing.T) {
 
 			data, err := io.ReadAll(res.Body)
 			if err != nil {
-				require.Fail(t, "err on read response body")
+				suite.Fail("err on read response body")
 			}
-			require.EqualValues(t, http.StatusBadRequest, res.StatusCode)
-			require.Contains(t, string(data), test.error)
+			suite.EqualValues(http.StatusBadRequest, res.StatusCode)
+			suite.Contains(string(data), test.error)
 		})
 	}
 }
@@ -251,7 +258,7 @@ func (suite *ConnectionHandlerTestSuite) TestConnectionController_Update_Busines
 	}
 }
 
-func TestConnectionController_FindById_InvalidPathId(t *testing.T) {
+func (suite *ConnectionHandlerTestSuite) TestConnectionController_FindById_InvalidPathId() {
 	tests := []struct {
 		name  string
 		value string
@@ -269,10 +276,10 @@ func TestConnectionController_FindById_InvalidPathId(t *testing.T) {
 		},
 	}
 
-	handler := originalHandler()
+	handler := suite.TargetSupplier()
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+		suite.Run(test.name, func() {
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
 			req.SetPathValue("node-id", test.value)
 
@@ -287,10 +294,10 @@ func TestConnectionController_FindById_InvalidPathId(t *testing.T) {
 
 			data, err := io.ReadAll(res.Body)
 			if err != nil {
-				require.Fail(t, "err on read response body")
+				suite.Fail("err on read response body")
 			}
-			require.EqualValues(t, http.StatusBadRequest, res.StatusCode)
-			require.Contains(t, string(data), test.error)
+			suite.EqualValues(http.StatusBadRequest, res.StatusCode)
+			suite.Contains(string(data), test.error)
 		})
 	}
 }

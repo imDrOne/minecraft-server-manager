@@ -3,7 +3,7 @@ package internal
 import (
 	"github.com/imDrOne/minecraft-server-manager/config"
 	"github.com/imDrOne/minecraft-server-manager/internal/app"
-	"github.com/imDrOne/minecraft-server-manager/internal/infrastructure/connections"
+	conndb "github.com/imDrOne/minecraft-server-manager/internal/infrastructure/connections/db"
 	"github.com/imDrOne/minecraft-server-manager/internal/infrastructure/nodes"
 	"github.com/imDrOne/minecraft-server-manager/pkg/db"
 	"log/slog"
@@ -34,7 +34,7 @@ func Run(config *config.Config) {
 	}
 
 	nodeRepo := nodes.NewNodeRepository(pg.Pool)
-	connRepo := connections.NewConnectionRepository(pg.Pool)
+	connRepo := conndb.NewConnectionRepository(pg.Pool)
 	httpServer := app.SetupHttpServer(nodeRepo, connRepo)
 
 	server := http.Server{

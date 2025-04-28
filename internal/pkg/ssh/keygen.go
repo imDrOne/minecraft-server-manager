@@ -19,6 +19,11 @@ const (
 	EncryptedRsaPKeyType = "ENCRYPTED RSA PRIVATE KEY"
 )
 
+type KeyPair struct {
+	private []byte
+	public  string
+}
+
 func GeneratePrivateKey(bits int) (*rsa.PrivateKey, error) {
 	return rsa.GenerateKey(rand.Reader, bits)
 }
@@ -118,10 +123,10 @@ func GeneratePublicKey(privateKey *rsa.PrivateKey) (string, error) {
 	return string(ssh.MarshalAuthorizedKey(pub)), nil
 }
 
-func GenerateKeyPair(bits int, passphrase, salt string) (privatePEM []byte, publicSSH string, err error) {
+func GenerateKeyPair(bits int, passphrase, salt string) (KeyPair, error) {
 	privateKey, err := GeneratePrivateKey(bits)
 	if err != nil {
-		return nil, "", err
+		return KeyPair{}, err
 	}
 
 	var pemBytes []byte
@@ -131,13 +136,16 @@ func GenerateKeyPair(bits int, passphrase, salt string) (privatePEM []byte, publ
 		pemBytes, err = EncodePrivateKeyToPEM(privateKey)
 	}
 	if err != nil {
-		return nil, "", err
+		return KeyPair{}, err
 	}
 
-	pub, err := GeneratePublicKey(privateKey)
+	publicKey, err := GeneratePublicKey(privateKey)
 	if err != nil {
-		return nil, "", err
+		return KeyPair{}, err
 	}
 
-	return pemBytes, pub, nil
+	return KeyPair{
+		private: pemBytes,
+		public:  publicKey,
+	}, nil
 }

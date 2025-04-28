@@ -4,7 +4,7 @@ import (
 	"context"
 	_ "embed"
 	domain "github.com/imDrOne/minecraft-server-manager/internal/domain/connections"
-	"github.com/imDrOne/minecraft-server-manager/internal/infrastructure/connections"
+	conndb "github.com/imDrOne/minecraft-server-manager/internal/infrastructure/connections/db"
 	"github.com/imDrOne/minecraft-server-manager/pkg/db"
 	seeds "github.com/imDrOne/minecraft-server-manager/test/generated/seeds"
 	"github.com/imDrOne/minecraft-server-manager/test/lib"
@@ -15,7 +15,7 @@ import (
 type ConnectionRepositoryTestSuite struct {
 	suite.Suite
 	db        *db.Postgres
-	repo      *connections.ConnectionRepository
+	repo      *conndb.ConnectionRepository
 	seedQuery *seeds.Queries
 	ctx       context.Context
 }
@@ -27,7 +27,7 @@ func (suite *ConnectionRepositoryTestSuite) SetupSuite() {
 	suite.db, err = db.NewWithConnectionString(pgContainer.ConnectionString)
 	suite.Require().NoError(err)
 
-	suite.repo = connections.NewConnectionRepository(suite.db.Pool)
+	suite.repo = conndb.NewConnectionRepository(suite.db.Pool)
 	suite.seedQuery = seeds.New(suite.db.Pool)
 }
 

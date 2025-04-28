@@ -14,7 +14,7 @@ import (
 	reflect "reflect"
 
 	connections "github.com/imDrOne/minecraft-server-manager/internal/domain/connections"
-	connections0 "github.com/imDrOne/minecraft-server-manager/internal/infrastructure/connections"
+	db "github.com/imDrOne/minecraft-server-manager/internal/infrastructure/connections/db"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -73,7 +73,7 @@ func (mr *MockRepositoryMockRecorder) FindByNodeId(arg0, arg1 any) *gomock.Call 
 }
 
 // Save mocks base method.
-func (m *MockRepository) Save(arg0 context.Context, arg1 int64, arg2 connections0.CreateConn) (*connections.Connection, error) {
+func (m *MockRepository) Save(arg0 context.Context, arg1 int64, arg2 db.CreateConn) (*connections.Connection, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Save", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*connections.Connection)
@@ -88,7 +88,7 @@ func (mr *MockRepositoryMockRecorder) Save(arg0, arg1, arg2 any) *gomock.Call {
 }
 
 // Update mocks base method.
-func (m *MockRepository) Update(ctx context.Context, id int64, updateConn connections0.UpdateConn) error {
+func (m *MockRepository) Update(ctx context.Context, id int64, updateConn db.UpdateConn) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Update", ctx, id, updateConn)
 	ret0, _ := ret[0].(error)
