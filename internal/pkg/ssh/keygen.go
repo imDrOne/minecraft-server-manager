@@ -20,8 +20,8 @@ const (
 )
 
 type KeyPair struct {
-	private []byte
-	public  string
+	Private []byte
+	Public  string
 }
 
 func GeneratePrivateKey(bits int) (*rsa.PrivateKey, error) {
@@ -145,7 +145,7 @@ func GenerateKeyPair(bits int, passphrase, salt string) (KeyPair, error) {
 	}
 
 	return KeyPair{
-		private: pemBytes,
-		public:  publicKey,
+		Private: pemBytes,
+		Public:  publicKey,
 	}, nil
 }

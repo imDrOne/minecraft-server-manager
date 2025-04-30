@@ -2,12 +2,12 @@ package connections
 
 import (
 	"bytes"
-	_ "embed"
 	"encoding/json"
 	"errors"
 	domain "github.com/imDrOne/minecraft-server-manager/internal/domain/connections"
 	conndb "github.com/imDrOne/minecraft-server-manager/internal/infrastructure/connections/db"
 	testutils "github.com/imDrOne/minecraft-server-manager/internal/pkg/test"
+	connservice "github.com/imDrOne/minecraft-server-manager/internal/service/connections"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"io"
@@ -17,16 +17,16 @@ import (
 )
 
 type ConnectionHandlerTestSuite struct {
-	testutils.Suite[*MockRepository, *ConnectionController]
+	testutils.Suite[*MockService, *ConnectionController]
 }
 
 func (suite *ConnectionHandlerTestSuite) SetupTest() {
 	suite.Suite.SetupTest(
-		func(ctrl *gomock.Controller) *MockRepository {
-			return NewMockRepository(ctrl)
+		func(ctrl *gomock.Controller) *MockService {
+			return NewMockService(ctrl)
 		},
-		func(repository *MockRepository) *ConnectionController {
-			return &ConnectionController{repo: repository}
+		func(service *MockService) *ConnectionController {
+			return &ConnectionController{service: service}
 		},
 	)
 }
@@ -54,7 +54,7 @@ func (suite *ConnectionHandlerTestSuite) TestConnectionHandler_Create_EmptyBody(
 func (suite *ConnectionHandlerTestSuite) TestConnectionHandler_Create_DuplicateErr() {
 	mockRepo := suite.MockSupplier()
 	mockRepo.EXPECT().
-		Save(suite.Ctx, gomock.Any(), gomock.Any()).
+		Create(suite.Ctx, gomock.Any(), gomock.Any()).
 		Return(nil, domain.ErrConnectionAlreadyExists)
 
 	var b bytes.Buffer
@@ -105,7 +105,10 @@ func (suite *ConnectionHandlerTestSuite) TestConnectionController_Create_Invalid
 	}
 
 	handler := suite.TargetSupplier()
-	handler.repo = conndb.NewConnectionRepository(nil)
+	connRepo := conndb.NewConnectionRepository(nil)
+	handler.service = connservice.NewConnectionService(connservice.Dependencies{
+		ConnRepo: connRepo,
+	})
 
 	for _, test := range tests {
 		suite.Run(test.name, func() {

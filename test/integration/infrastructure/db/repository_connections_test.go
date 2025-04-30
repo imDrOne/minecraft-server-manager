@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	_ "embed"
 	domain "github.com/imDrOne/minecraft-server-manager/internal/domain/connections"
 	conndb "github.com/imDrOne/minecraft-server-manager/internal/infrastructure/connections/db"
 	"github.com/imDrOne/minecraft-server-manager/pkg/db"

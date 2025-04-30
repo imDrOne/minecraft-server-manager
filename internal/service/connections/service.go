@@ -11,28 +11,45 @@ import (
 	"log"
 )
 
-//go:generate go tool mockgen -destination mock_test.go -package connections . NodeRepository
+//go:generate go tool mockgen -destination mock_node_repo_test.go -package connections . NodeRepository
 type NodeRepository interface {
 	FindById(context.Context, int64) (*domainnode.Node, error)
 }
 
-//go:generate go tool mockgen -destination mock_test.go -package connections . ConnectionRepository
+//go:generate go tool mockgen -destination mock_conn_repo_test.go -package connections . ConnectionRepository
 type ConnectionRepository interface {
 	Save(context.Context, int64, conndb.CreateConn) (*domainconn.Connection, error)
 	FindById(context.Context, int64) (*domainconn.Connection, error)
 	Update(ctx context.Context, id int64, updateConn conndb.UpdateConn) error
+	FindByNodeId(ctx context.Context, id int64) ([]domainconn.Connection, error)
+}
+
+//go:generate go tool mockgen -destination mock_sshkey_repo_test.go -package connections . ConnectionSshKeyRepository
+type ConnectionSshKeyRepository interface {
+	Save(context context.Context, connId int64, create func() (*domainconn.ConnectionSshKeyPair, error)) (*domainconn.ConnectionSshKeyPair, error)
+	Get(context context.Context, id int64) (*domainconn.ConnectionSshKeyPair, error)
+}
+
+type Dependencies struct {
+	NodeRepo         NodeRepository
+	ConnRepo         ConnectionRepository
+	ConnSshKeyRepo   ConnectionSshKeyRepository
+	SshKeygenService *sshservice.KeygenService
 }
 
 type ConnectionService struct {
 	nodeRepo         NodeRepository
 	connRepo         ConnectionRepository
-	sshKeygenService sshservice.KeygenService
+	connSshKeyRepo   ConnectionSshKeyRepository
+	sshKeygenService *sshservice.KeygenService
 }
 
-func NewConnectionService(n NodeRepository, c ConnectionRepository) *ConnectionService {
+func NewConnectionService(deps Dependencies) *ConnectionService {
 	return &ConnectionService{
-		nodeRepo: n,
-		connRepo: c,
+		nodeRepo:         deps.NodeRepo,
+		connRepo:         deps.ConnRepo,
+		sshKeygenService: deps.SshKeygenService,
+		connSshKeyRepo:   deps.ConnSshKeyRepo,
 	}
 }
 
@@ -43,17 +60,20 @@ func (r *ConnectionService) Create(
 ) (*ConnectionDto, error) {
 	conn, err := r.connRepo.Save(ctx, nodeId, createConn)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error on saving connection for node=%d: %w", nodeId, err)
 	}
 
-	pair, err := r.sshKeygenService.GeneratePair()
+	pair, err := r.connSshKeyRepo.Save(ctx, conn.NodeId(), func() (*domainconn.ConnectionSshKeyPair, error) {
+		pair, err := r.sshKeygenService.GeneratePair()
+		return domainconn.ConnSshKeysFromPair(pair), err
+	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error on saving connection ssh-key pair: %w", err)
 	}
 
 	return &ConnectionDto{
-		RawConnection: *conn,
-		SshKeyPair:    pair,
+		Connection:           conn,
+		ConnectionSshKeyPair: pair,
 	}, err
 }
 
@@ -61,8 +81,8 @@ func (r *ConnectionService) Update(ctx context.Context, id int64, updateConn con
 	return r.connRepo.Update(ctx, id, updateConn)
 }
 
-func (r *ConnectionService) FindById(ctx context.Context, id int64) (*domainconn.Connection, error) {
-	return r.connRepo.FindById(ctx, id)
+func (r *ConnectionService) FindByNodeId(ctx context.Context, id int64) ([]domainconn.Connection, error) {
+	return r.connRepo.FindByNodeId(ctx, id)
 }
 
 func (r *ConnectionService) ConnectByConnectionID(ctx context.Context, connId int64, command string) (string, error) {

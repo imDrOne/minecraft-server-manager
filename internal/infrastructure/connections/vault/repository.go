@@ -7,8 +7,14 @@ import (
 	"github.com/hashicorp/vault-client-go"
 	"github.com/hashicorp/vault-client-go/schema"
 	"github.com/imDrOne/minecraft-server-manager/config"
+	"github.com/imDrOne/minecraft-server-manager/internal/domain/connections"
 	"path/filepath"
 	"strconv"
+)
+
+const (
+	privateKey = "private"
+	publicKey  = "public"
 )
 
 var (
@@ -19,64 +25,56 @@ var (
 	GetPublicKeyError  = errors.New("failed to get public key")
 )
 
-type KeyStore interface {
-	Save(context context.Context, connId int, create func() (KeyPair, error)) error
-	Get(context context.Context, id int) (KeyPair, error)
-}
-
-type KeyStoreClient struct {
+type ConnectionSshKeyRepository struct {
 	vault *vault.Client
 	cgf   config.Vault
 }
 
-func NewKeyStoreClient(vault *vault.Client, cfg config.Vault) KeyStoreClient {
-	return KeyStoreClient{
+func NewConnSshKeyRepository(vault *vault.Client, cfg config.Vault) *ConnectionSshKeyRepository {
+	return &ConnectionSshKeyRepository{
 		vault,
 		cfg,
 	}
 }
 
-func (r *KeyStoreClient) Save(ctx context.Context, connId int, create func() (KeyPair, error)) error {
+func (r *ConnectionSshKeyRepository) Save(ctx context.Context, connId int64, create func() (*connections.ConnectionSshKeyPair, error)) (*connections.ConnectionSshKeyPair, error) {
 	keypair, err := create()
 	if err != nil {
-		return fmt.Errorf("error on creating keypair: %w", err)
+		return nil, fmt.Errorf("error on creating keypair: %w", err)
 	}
 
 	_, err = r.vault.Secrets.KvV2Write(ctx, r.supplySavePath(connId), schema.KvV2WriteRequest{
 		Data: map[string]any{
-			privateKey: keypair.Private,
-			publicKey:  keypair.Public,
+			privateKey: keypair.PrivatePemStr(),
+			publicKey:  keypair.Public(),
 		},
 	}, vault.WithMountPath(r.cgf.MountPath))
 	if err != nil {
-		return fmt.Errorf("%w: %w", SaveKeyPairError, err)
+		return nil, fmt.Errorf("%w: %w", SaveKeyPairError, err)
 	}
 
-	return nil
+	return keypair, nil
 }
 
-func (r *KeyStoreClient) Get(ctx context.Context, id int) (KeyPair, error) {
+func (r *ConnectionSshKeyRepository) Get(ctx context.Context, id int64) (*connections.ConnectionSshKeyPair, error) {
 	result, err := r.vault.Secrets.KvV2Read(ctx, r.supplySavePath(id), vault.WithMountPath(r.cgf.MountPath))
 	if err != nil {
-		return KeyPair{}, fmt.Errorf("%w: %w", GetKeyPairError, err)
+		return nil, fmt.Errorf("%w: %w", GetKeyPairError, err)
 	}
 
-	privateSsh, ok := result.Data.Data[privateKey].(string)
+	privateSshPem, ok := result.Data.Data[privateKey].(string)
 	if !ok {
-		return KeyPair{}, GetPrivateKeyError
+		return nil, GetPrivateKeyError
 	}
 
 	publicSsh, ok := result.Data.Data[publicKey].(string)
 	if !ok {
-		return KeyPair{}, GetPublicKeyError
+		return nil, GetPublicKeyError
 	}
 
-	return KeyPair{
-		privateSsh,
-		publicSsh,
-	}, nil
+	return connections.NewConnSshKeyPair([]byte(privateSshPem), publicSsh), nil
 }
 
-func (r *KeyStoreClient) supplySavePath(id int) string {
-	return filepath.Join(r.cgf.Connections.Path, strconv.Itoa(id))
+func (r *ConnectionSshKeyRepository) supplySavePath(id int64) string {
+	return filepath.Join(r.cgf.Connections.Path, strconv.FormatInt(id, 10))
 }

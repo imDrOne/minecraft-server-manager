@@ -1,7 +1,6 @@
 package connections
 
 import (
-	_ "embed"
 	"github.com/imDrOne/minecraft-server-manager/internal/generated/query"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/assert"

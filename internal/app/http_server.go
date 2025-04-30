@@ -3,14 +3,29 @@ package app
 import (
 	"github.com/imDrOne/minecraft-server-manager/internal/app/connections"
 	"github.com/imDrOne/minecraft-server-manager/internal/app/nodes"
+	connservice "github.com/imDrOne/minecraft-server-manager/internal/service/connections"
+	sshservice "github.com/imDrOne/minecraft-server-manager/internal/service/ssh"
 	"net/http"
 )
 
-func SetupHttpServer(nodesRepo nodes.Repository, connRepo connections.Repository) *http.ServeMux {
+type Dependencies struct {
+	NodesRepo      nodes.Repository
+	ConnRepo       connections.Repository
+	ConnSshKeyRepo connections.ConnectionSshKeyRepository
+	KeygenService  *sshservice.KeygenService
+}
+
+func SetupHttpServer(deps Dependencies) *http.ServeMux {
 	root := http.NewServeMux()
 
-	nodeController := nodes.NewController(nodesRepo)
-	connController := connections.NewController(connRepo)
+	nodeController := nodes.NewController(deps.NodesRepo)
+	connService := connservice.NewConnectionService(connservice.Dependencies{
+		NodeRepo:         deps.NodesRepo,
+		ConnRepo:         deps.ConnRepo,
+		ConnSshKeyRepo:   deps.ConnSshKeyRepo,
+		SshKeygenService: deps.KeygenService,
+	})
+	connController := connections.NewController(connService)
 
 	nodeHandler := nodes.NewHandler(nodeController)
 	connHandler := connections.NewHandler(connController)

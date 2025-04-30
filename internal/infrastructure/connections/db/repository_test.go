@@ -2,7 +2,6 @@ package db
 
 import (
 	"database/sql"
-	_ "embed"
 	"errors"
 	domain "github.com/imDrOne/minecraft-server-manager/internal/domain/connections"
 	"github.com/imDrOne/minecraft-server-manager/internal/generated/query"

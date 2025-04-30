@@ -9,11 +9,11 @@ import (
 )
 
 type ConnectionController struct {
-	repo Repository
+	service Service
 }
 
-func NewController(repo Repository) ConnectionController {
-	return ConnectionController{repo: repo}
+func NewController(service Service) ConnectionController {
+	return ConnectionController{service: service}
 }
 
 func (c ConnectionController) Create(w http.ResponseWriter, r *http.Request) {
@@ -23,7 +23,7 @@ func (c ConnectionController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	conn, err := c.repo.Save(r.Context(), connDto.NodeId, func() (*domain.Connection, error) {
+	conn, err := c.service.Create(r.Context(), connDto.NodeId, func() (*domain.Connection, error) {
 		return domain.CreateConnection(connDto.NodeId, connDto.User)
 	})
 	if err != nil {
@@ -76,7 +76,7 @@ func (c ConnectionController) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = c.repo.Update(r.Context(), int64(id), func(connection domain.Connection) (*domain.Connection, error) {
+	err = c.service.Update(r.Context(), int64(id), func(connection domain.Connection) (*domain.Connection, error) {
 		return connection.Update(connDto.User)
 	})
 
@@ -111,7 +111,7 @@ func (c ConnectionController) FindById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	connections, err := c.repo.FindByNodeId(r.Context(), int64(id))
+	connections, err := c.service.FindByNodeId(r.Context(), int64(id))
 
 	if err != nil {
 		statusCode := http.StatusInternalServerError
