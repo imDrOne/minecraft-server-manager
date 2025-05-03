@@ -15,7 +15,6 @@ func TestMain(m *testing.M) {
 		slog.Error(err.Error())
 		panic("error during starting docker container")
 	}
-
 	code := m.Run()
 
 	os.Exit(code)

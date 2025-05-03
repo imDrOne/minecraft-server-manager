@@ -44,10 +44,10 @@ func (m *MockService) EXPECT() *MockServiceMockRecorder {
 }
 
 // Create mocks base method.
-func (m *MockService) Create(ctx context.Context, nodeId int64, createConn db.CreateConn) (*connections0.ConnectionDto, error) {
+func (m *MockService) Create(ctx context.Context, nodeId int64, createConn db.CreateConn) (*connections0.ConnectionTO, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", ctx, nodeId, createConn)
-	ret0, _ := ret[0].(*connections0.ConnectionDto)
+	ret0, _ := ret[0].(*connections0.ConnectionTO)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

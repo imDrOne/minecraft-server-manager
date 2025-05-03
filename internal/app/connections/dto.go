@@ -14,7 +14,7 @@ type UpdateConnectionRequestDto struct {
 
 type ConnectionResponseDto struct {
 	Id        int64     `json:"id"`
-	Key       string    `json:"key"`
+	PublicKey string    `json:"publicKey"`
 	User      string    `json:"user"`
 	CreatedAt time.Time `json:"createdAt"`
 }

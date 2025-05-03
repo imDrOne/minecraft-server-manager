@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/ilyakaznacheev/cleanenv"
+	"path/filepath"
+	runtime "runtime"
 	"time"
 )
 
@@ -54,12 +56,24 @@ type ConnectionsVault struct {
 }
 
 func New() *Config {
-	var cfg Config
 	var env string
 	flag.StringVar(&env, "env", "local", "Application profile")
 	flag.Parse()
 
-	if err := cleanenv.ReadConfig(fmt.Sprintf("./config.%s.yaml", env), &cfg); err != nil {
+	return NewWithEnvironment(env)
+}
+
+func NewWithEnvironment(env string) *Config {
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		panic("cannot get caller info")
+	}
+
+	projectRoot := filepath.Dir(filepath.Dir(filename))
+	configPath := filepath.Join(projectRoot, fmt.Sprintf("config.%s.yaml", env))
+
+	var cfg Config
+	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
 		panic(fmt.Errorf("fatal error config file: %w", err))
 	}
 

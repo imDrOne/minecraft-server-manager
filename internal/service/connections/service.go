@@ -11,6 +11,11 @@ import (
 	"log"
 )
 
+type ConnectionTO struct {
+	*domainconn.Connection
+	PublicKey string
+}
+
 //go:generate go tool mockgen -destination mock_node_repo_test.go -package connections . NodeRepository
 type NodeRepository interface {
 	FindById(context.Context, int64) (*domainnode.Node, error)
@@ -53,11 +58,12 @@ func NewConnectionService(deps Dependencies) *ConnectionService {
 	}
 }
 
+// Create todo: MSM-24
 func (r *ConnectionService) Create(
 	ctx context.Context,
 	nodeId int64,
 	createConn conndb.CreateConn,
-) (*ConnectionDto, error) {
+) (*ConnectionTO, error) {
 	conn, err := r.connRepo.Save(ctx, nodeId, createConn)
 	if err != nil {
 		return nil, fmt.Errorf("error on saving connection for node=%d: %w", nodeId, err)
@@ -71,10 +77,10 @@ func (r *ConnectionService) Create(
 		return nil, fmt.Errorf("error on saving connection ssh-key pair: %w", err)
 	}
 
-	return &ConnectionDto{
-		Connection:           conn,
-		ConnectionSshKeyPair: pair,
-	}, err
+	return &ConnectionTO{
+		Connection: conn,
+		PublicKey:  pair.Public(),
+	}, nil
 }
 
 func (r *ConnectionService) Update(ctx context.Context, id int64, updateConn conndb.UpdateConn) error {

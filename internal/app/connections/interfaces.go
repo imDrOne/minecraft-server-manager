@@ -23,7 +23,7 @@ type ConnectionSshKeyRepository interface {
 
 //go:generate go tool mockgen -destination mock_service_test.go -package connections . Service
 type Service interface {
-	Create(ctx context.Context, nodeId int64, createConn conndb.CreateConn) (*connservice.ConnectionDto, error)
+	Create(ctx context.Context, nodeId int64, createConn conndb.CreateConn) (*connservice.ConnectionTO, error)
 	Update(ctx context.Context, id int64, updateConn conndb.UpdateConn) error
 	FindByNodeId(ctx context.Context, id int64) ([]domain.Connection, error)
 }

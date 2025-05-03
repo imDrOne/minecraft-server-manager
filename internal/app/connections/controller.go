@@ -42,8 +42,8 @@ func (c ConnectionController) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	j, err := json.Marshal(ConnectionResponseDto{
-		Id: conn.Id(),
-		//Key:       conn.Key(),
+		Id:        conn.Id(),
+		PublicKey: conn.PublicKey,
 		User:      conn.User(),
 		CreatedAt: conn.CreatedAt(),
 	})

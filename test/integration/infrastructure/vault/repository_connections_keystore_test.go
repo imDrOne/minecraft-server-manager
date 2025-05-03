@@ -16,30 +16,21 @@ import (
 type ConnectionsKeyStoreTestSuite struct {
 	suite.Suite
 	ctx            context.Context
+	cfg            *config.Config
 	keyStoreClient *connssh.ConnectionSshKeyRepository
 }
 
+// todo: Decompose setup (look at service_connection_test.go)
 func (suite *ConnectionsKeyStoreTestSuite) SetupSuite() {
+	suite.ctx = context.Background()
 
+	suite.cfg = config.NewWithEnvironment("test")
 	vaultContainer := lib.GetVaultContainer()
 	vaultClient, err := vault.New(vaultContainer.HostAddress, func(cl *client.Client) error {
 		return cl.SetToken("root")
 	})
-	if err != nil {
-		panic(err)
-	}
-
-	suite.ctx = context.Background()
-
-	suite.keyStoreClient = connssh.NewConnSshKeyRepository(
-		vaultClient,
-		config.Vault{
-			MountPath: "secret",
-			Connections: config.ConnectionsVault{
-				Path: "ssh-keys",
-			},
-		},
-	)
+	suite.Require().NoError(err)
+	suite.keyStoreClient = connssh.NewConnSshKeyRepository(vaultClient, suite.cfg.Vault)
 
 }
 
