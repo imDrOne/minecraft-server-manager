@@ -13,7 +13,7 @@ func Init() Validator {
 	return Validator{validator.New()}
 }
 
-func (v *Validator) StructWithErrors(stc interface{}) *ValidateError {
+func (v *Validator) StructWithErrors(stc interface{}) error {
 	err := v.Struct(stc)
 	var validateErrs validator.ValidationErrors
 	if errors.As(err, &validateErrs) {
@@ -23,6 +23,9 @@ func (v *Validator) StructWithErrors(stc interface{}) *ValidateError {
 				Name:    err.Field(),
 				Message: err.Tag(),
 			})
+		}
+		if len(fieldErrors) == 0 {
+			return nil
 		}
 		return &ValidateError{fieldErrors}
 	}
