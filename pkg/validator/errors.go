@@ -1,6 +1,10 @@
 package validator
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+	"slices"
+)
 
 type ValidateError struct {
 	Errors []FieldError `json:"errors"`
@@ -16,10 +20,20 @@ func (e *ValidateError) Error() string {
 	for _, err := range e.Errors {
 		str += fmt.Sprintf("\t%s: %s\n", err.Name, err.Message)
 	}
-	Node
 	return str
 }
 
 func (e *FieldError) Error() string {
-	return fmt.Sprintf("%s %s", e.Name, e.Message)
+	return e.Message
+}
+
+func (e *ValidateError) Is(target error) bool {
+
+	var err *ValidateError
+	ok := errors.As(target, &err)
+	if !ok || e == nil || err == nil {
+		return false
+	}
+
+	return slices.Equal(e.Errors, err.Errors)
 }

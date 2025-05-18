@@ -13,7 +13,7 @@ func Init() Validator {
 	return Validator{validator.New()}
 }
 
-func (v *Validator) Struct(stc *interface{}) *ValidateError {
+func (v *Validator) StructWithErrors(stc interface{}) *ValidateError {
 	err := v.Struct(stc)
 	var validateErrs validator.ValidationErrors
 	if errors.As(err, &validateErrs) {
