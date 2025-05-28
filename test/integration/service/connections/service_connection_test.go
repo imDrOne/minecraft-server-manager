@@ -1,4 +1,4 @@
-package service
+package connections
 
 import (
 	"context"
@@ -60,7 +60,7 @@ func (suite *ConnectionServiceTestSuite) SetupSuite() {
 	})
 }
 
-func (suite *ConnectionServiceTestSuite) BeforeTest() {
+func (suite *ConnectionServiceTestSuite) BeforeTest(_, _ string) {
 	_ = suite.seedQuery.InsertNodeSeed(context.Background())
 }
 
