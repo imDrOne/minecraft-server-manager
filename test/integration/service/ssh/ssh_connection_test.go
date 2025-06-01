@@ -56,7 +56,7 @@ func provideSshConnectionConfig() model.NodeSSHConnectionTO {
 type ConnectionServiceTestSuite struct {
 	suite.Suite
 	cfg     *config.Config
-	service *ssh.SshService
+	service *ssh.Service
 	ctx     context.Context
 }
 

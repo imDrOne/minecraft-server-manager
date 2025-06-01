@@ -11,15 +11,15 @@ import (
 	"time"
 )
 
-type SshService struct {
+type Service struct {
 	sshClientTimeout time.Duration
 }
 
-func NewSshService(timeout time.Duration) *SshService {
-	return &SshService{sshClientTimeout: timeout}
+func NewSshService(timeout time.Duration) *Service {
+	return &Service{sshClientTimeout: timeout}
 }
 
-func (s *SshService) newClient(cfg model.NodeSSHConnectionTO) (*ssh.Client, error) {
+func (s *Service) newClient(cfg model.NodeSSHConnectionTO) (*ssh.Client, error) {
 	client, err := sshpkg.ProvideSshClient(sshpkg.ClientConfig{
 		Auth:    cfg.Auth,
 		Host:    cfg.Host,
@@ -33,7 +33,7 @@ func (s *SshService) newClient(cfg model.NodeSSHConnectionTO) (*ssh.Client, erro
 	return client, nil
 }
 
-func (s *SshService) InjectPublicKey(cfg model.NodeSSHConnectionTO, publicKey string) error {
+func (s *Service) InjectPublicKey(cfg model.NodeSSHConnectionTO, publicKey string) error {
 	client, err := s.newClient(cfg)
 	if err != nil {
 		return fmt.Errorf("ssh connection failed: %w", err)
@@ -61,12 +61,12 @@ func (s *SshService) InjectPublicKey(cfg model.NodeSSHConnectionTO, publicKey st
 	return nil
 }
 
-func (s *SshService) Ping(cfg model.NodeSSHConnectionTO) error {
+func (s *Service) Ping(cfg model.NodeSSHConnectionTO) error {
 	client, err := s.newClient(cfg)
-	defer client.Close()
-
 	if err != nil {
 		return fmt.Errorf("error on trying ping connection=%v: %w", cfg, err)
 	}
+	defer client.Close()
+
 	return nil
 }
