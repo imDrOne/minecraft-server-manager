@@ -12,18 +12,18 @@ import (
 )
 
 const checkExistsConnection = `-- name: CheckExistsConnection :one
-SELECT EXISTS (SELECT 1 FROM connection WHERE checksum = $1)
+SELECT EXISTS (SELECT 1 FROM connection WHERE "user" = $1)
 `
 
-func (q *Queries) CheckExistsConnection(ctx context.Context, checksum string) (bool, error) {
-	row := q.db.QueryRow(ctx, checkExistsConnection, checksum)
+func (q *Queries) CheckExistsConnection(ctx context.Context, user string) (bool, error) {
+	row := q.db.QueryRow(ctx, checkExistsConnection, user)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
 }
 
 const findConnectionById = `-- name: FindConnectionById :one
-SELECT id, node_id, key, checksum, "user", created_at, updated_at
+SELECT id, node_id, encrypted_key, pub_key, "user", created_at, updated_at
 FROM connection
 WHERE id = $1
 `
@@ -34,8 +34,8 @@ func (q *Queries) FindConnectionById(ctx context.Context, id int64) (Connection,
 	err := row.Scan(
 		&i.ID,
 		&i.NodeID,
-		&i.Key,
-		&i.Checksum,
+		&i.EncryptedKey,
+		&i.PubKey,
 		&i.User,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -44,7 +44,7 @@ func (q *Queries) FindConnectionById(ctx context.Context, id int64) (Connection,
 }
 
 const findConnectionsByNodeId = `-- name: FindConnectionsByNodeId :many
-SELECT id, node_id, key, checksum, "user", created_at, updated_at
+SELECT id, node_id, encrypted_key, pub_key, "user", created_at, updated_at
 FROM connection
 WHERE node_id = $1
 `
@@ -61,8 +61,8 @@ func (q *Queries) FindConnectionsByNodeId(ctx context.Context, nodeID int64) ([]
 		if err := rows.Scan(
 			&i.ID,
 			&i.NodeID,
-			&i.Key,
-			&i.Checksum,
+			&i.EncryptedKey,
+			&i.PubKey,
 			&i.User,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -78,16 +78,14 @@ func (q *Queries) FindConnectionsByNodeId(ctx context.Context, nodeID int64) ([]
 }
 
 const saveConnection = `-- name: SaveConnection :one
-INSERT INTO connection (node_id, key, "user", checksum)
-VALUES ($1, $2, $3, $4)
+INSERT INTO connection (node_id, "user")
+VALUES ($1, $2)
 RETURNING id, created_at
 `
 
 type SaveConnectionParams struct {
-	NodeID   int64
-	Key      string
-	User     string
-	Checksum string
+	NodeID int64
+	User   string
 }
 
 type SaveConnectionRow struct {
@@ -96,12 +94,7 @@ type SaveConnectionRow struct {
 }
 
 func (q *Queries) SaveConnection(ctx context.Context, arg SaveConnectionParams) (SaveConnectionRow, error) {
-	row := q.db.QueryRow(ctx, saveConnection,
-		arg.NodeID,
-		arg.Key,
-		arg.User,
-		arg.Checksum,
-	)
+	row := q.db.QueryRow(ctx, saveConnection, arg.NodeID, arg.User)
 	var i SaveConnectionRow
 	err := row.Scan(&i.ID, &i.CreatedAt)
 	return i, err
@@ -109,18 +102,16 @@ func (q *Queries) SaveConnection(ctx context.Context, arg SaveConnectionParams) 
 
 const updateConnectionById = `-- name: UpdateConnectionById :exec
 UPDATE connection
-SET key    = $2,
-    "user" = $3
+SET "user" = $2
 WHERE id = $1
 `
 
 type UpdateConnectionByIdParams struct {
 	ID   int64
-	Key  string
 	User string
 }
 
 func (q *Queries) UpdateConnectionById(ctx context.Context, arg UpdateConnectionByIdParams) error {
-	_, err := q.db.Exec(ctx, updateConnectionById, arg.ID, arg.Key, arg.User)
+	_, err := q.db.Exec(ctx, updateConnectionById, arg.ID, arg.User)
 	return err
 }

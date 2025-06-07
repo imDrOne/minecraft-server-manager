@@ -7,7 +7,7 @@
 //
 
 // Package connections is a generated GoMock package.
-package connections
+package db
 
 import (
 	context "context"

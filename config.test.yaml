@@ -1,0 +1,9 @@
+ssh-keygen:
+  bits: 1024
+  passphrase: V6yiQrxTd5rDYFapxD-mg
+  salt: 9a1b098b295449617be6a797e5718f53f69c7f065cd3d872f7f724db08cb5610
+
+vault:
+  mount-path: secret
+  connections:
+    path: ssh-keys

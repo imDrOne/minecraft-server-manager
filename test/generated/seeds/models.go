@@ -9,13 +9,13 @@ import (
 )
 
 type Connection struct {
-	ID        int64
-	NodeID    int64
-	Key       string
-	Checksum  string
-	User      string
-	CreatedAt pgtype.Timestamp
-	UpdatedAt pgtype.Timestamp
+	ID           int64
+	NodeID       int64
+	EncryptedKey pgtype.Text
+	PubKey       pgtype.Text
+	User         string
+	CreatedAt    pgtype.Timestamp
+	UpdatedAt    pgtype.Timestamp
 }
 
 type Node struct {

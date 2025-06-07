@@ -1,4 +1,4 @@
-package infrastructure
+package db
 
 import (
 	"context"
@@ -11,14 +11,13 @@ import (
 
 func TestMain(m *testing.M) {
 	ctx := context.Background()
-
-	if _, err := lib.StartPostgresContainer(ctx); err != nil {
+	if err := lib.StartPostgresContainer(ctx); err != nil {
 		slog.Error(err.Error())
 		panic("error during starting container")
 	}
 
-	pgConnStr := lib.GetPgConnectionString()
-	if err := internal.MigrateUpWithConnectionString(pgConnStr); err != nil {
+	pgContainer := lib.GetPgContainer()
+	if err := internal.MigrateUpWithConnectionString(pgContainer.ConnectionString); err != nil {
 		slog.Error(err.Error())
 		panic("error during running migrations")
 	}

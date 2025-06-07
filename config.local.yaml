@@ -10,3 +10,16 @@ database:
   user: happy_miner
   password: happy_miner
   name: server_manager
+
+ssh-keygen:
+  bits: 1024
+  passphrase: 01JS9FS1DKQRAG4JPFBHZFXAMW
+  salt: WtiJqIgscLHWD0hu5ySty
+
+vault:
+  address: localhost
+  port: 8200
+  token: root
+  mount-path: secret
+  connections:
+    path: ssh-keys

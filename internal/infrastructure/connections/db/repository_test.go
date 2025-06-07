@@ -1,13 +1,12 @@
-package connections
+package db
 
 import (
 	"database/sql"
-	_ "embed"
 	"errors"
 	domain "github.com/imDrOne/minecraft-server-manager/internal/domain/connections"
 	"github.com/imDrOne/minecraft-server-manager/internal/generated/query"
+	repotestutils "github.com/imDrOne/minecraft-server-manager/internal/pkg/test"
 	testutils "github.com/imDrOne/minecraft-server-manager/internal/pkg/test"
-	repotestutils "github.com/imDrOne/minecraft-server-manager/internal/pkg/test/repository"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -36,13 +35,9 @@ var (
 )
 
 var (
-	//go:embed test_key.pub
-	validSSHKey string
-	validConn   = query.Connection{
+	validConn = query.Connection{
 		ID:        1,
 		NodeID:    1,
-		Key:       validSSHKey,
-		Checksum:  "checksum",
 		User:      "test",
 		CreatedAt: pgtype.Timestamp{},
 		UpdatedAt: pgtype.Timestamp{},
@@ -50,9 +45,7 @@ var (
 	invalidConn = query.Connection{
 		ID:        2,
 		NodeID:    1,
-		Key:       "invalid-key",
-		Checksum:  "checksum",
-		User:      "test",
+		User:      "test!Test",
 		CreatedAt: pgtype.Timestamp{},
 		UpdatedAt: pgtype.Timestamp{},
 	}
