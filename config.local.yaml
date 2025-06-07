@@ -17,7 +17,7 @@ ssh-keygen:
   salt: WtiJqIgscLHWD0hu5ySty
 
 vault:
-  address: localhost
+  address: http://localhost
   port: 8200
   token: root
   mount-path: secret

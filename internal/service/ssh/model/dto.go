@@ -3,10 +3,11 @@ package model
 import "github.com/imDrOne/minecraft-server-manager/pkg/ssh"
 
 type NodeSSHConnectionTO struct {
-	Auth ssh.Auth
-	Host string
-	Port int64
-	User string
+	NodeId int64
+	Auth   ssh.Auth
+	Host   string
+	Port   int64
+	User   string
 }
 
 func (r *NodeSSHConnectionTO) WithAuth(auth ssh.Auth) NodeSSHConnectionTO {

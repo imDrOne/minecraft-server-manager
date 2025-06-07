@@ -16,7 +16,7 @@ func NewController(sshConnectionService SshConnectionService) RemoteController {
 }
 
 func (c RemoteController) ForwardPublicKey(w http.ResponseWriter, r *http.Request) {
-	connIdStr := r.PathValue("connection-id")
+	connIdStr := r.PathValue("connectionId")
 	if connIdStr == "" {
 		http.Error(w, "expected id - got empty string", http.StatusBadRequest)
 		return
@@ -41,6 +41,5 @@ func (c RemoteController) ForwardPublicKey(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	//w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNoContent)
 }

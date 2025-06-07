@@ -25,7 +25,7 @@ type ConnectionSshKeyRepository interface {
 	Get(context context.Context, id int64) (*domainconn.ConnectionSshKeyPair, error)
 }
 
-//go:generate go tool mockgen -destination mock_sshkey_repo_test.go -package service . SshService
+//go:generate go tool mockgen -destination mock_ssh_service_test.go -package service . SshService
 type SshService interface {
 	InjectPublicKey(cfg model.NodeSSHConnectionTO, publicKey string) error
 	Ping(cfg model.NodeSSHConnectionTO) error
@@ -60,9 +60,9 @@ func (r *ConnectionSshFacade) InjectPublicKey(ctx context.Context, id int64, dto
 		return fmt.Errorf("error on supplying node-ssh-connection obj by conn-id=%d: %w", id, err)
 	}
 
-	keys, err := r.connSshKeyRepo.Get(ctx, id)
+	keys, err := r.connSshKeyRepo.Get(ctx, nodeSshConnectionTO.NodeId)
 	if err != nil {
-		return fmt.Errorf("error on fetching keys by id %d: %w", id, err)
+		return fmt.Errorf("error on fetching keys by conn-id=%d: %w", id, err)
 	}
 
 	return r.sshService.InjectPublicKey(nodeSshConnectionTO.WithAuth(sshpkg.Auth{
@@ -77,9 +77,9 @@ func (r *ConnectionSshFacade) Ping(ctx context.Context, id int64) error {
 		return fmt.Errorf("error on supplying node-ssh-connection obj by conn-id=%d: %w", id, err)
 	}
 
-	keys, err := r.connSshKeyRepo.Get(ctx, id)
+	keys, err := r.connSshKeyRepo.Get(ctx, nodeSshConnectionTO.NodeId)
 	if err != nil {
-		return fmt.Errorf("error on fetching keys by id %d: %w", id, err)
+		return fmt.Errorf("error on fetching keys by conn-id=%d: %w", id, err)
 	}
 
 	return r.sshService.Ping(nodeSshConnectionTO.WithAuth(sshpkg.Auth{
@@ -100,8 +100,9 @@ func (r *ConnectionSshFacade) supplyNodeSshConnection(ctx context.Context, id in
 	}
 
 	return model.NodeSSHConnectionTO{
-		Host: node.Host(),
-		Port: int64(node.Port()),
-		User: connection.User(),
+		NodeId: connection.NodeId(),
+		Host:   node.Host(),
+		Port:   int64(node.Port()),
+		User:   connection.User(),
 	}, err
 }

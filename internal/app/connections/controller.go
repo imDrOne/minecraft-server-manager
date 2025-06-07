@@ -99,7 +99,7 @@ func (c ConnectionController) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c ConnectionController) FindById(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("node-id")
+	idStr := r.PathValue("nodeId")
 	if idStr == "" {
 		http.Error(w, "expected id - got empty string", http.StatusBadRequest)
 		return
