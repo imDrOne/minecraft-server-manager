@@ -284,7 +284,7 @@ func (suite *ConnectionHandlerTestSuite) TestConnectionController_FindById_Inval
 	for _, test := range tests {
 		suite.Run(test.name, func() {
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
-			req.SetPathValue("node-id", test.value)
+			req.SetPathValue("nodeId", test.value)
 
 			w := httptest.NewRecorder()
 			handler.FindById(w, req)
