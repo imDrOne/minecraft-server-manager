@@ -2,6 +2,7 @@ package ssh
 
 import (
 	"fmt"
+	"github.com/melbahja/goph"
 	"golang.org/x/crypto/ssh"
 	"time"
 )
@@ -9,22 +10,23 @@ import (
 type ClientConfig struct {
 	Auth    Auth
 	Host    string
-	Port    int64
+	Port    uint
 	User    string
 	Timeout time.Duration
 }
 
-func ProvideSshClient(cfg ClientConfig) (*ssh.Client, error) {
+func ProvideSshClient(cfg ClientConfig) (*goph.Client, error) {
 	authMethod, err := cfg.Auth.ToSSHAuthMethod()
 	if err != nil {
 		return nil, fmt.Errorf("error on creating ssh client for node-connection{%s@%s:%d}: %w", cfg.User, cfg.Host, cfg.Port, err)
 	}
-	config := &ssh.ClientConfig{
-		User:            cfg.User,
-		Auth:            []ssh.AuthMethod{authMethod},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout:         cfg.Timeout,
-	}
-	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
-	return ssh.Dial("tcp", addr, config)
+
+	return goph.NewConn(&goph.Config{
+		Auth:     authMethod,
+		User:     cfg.User,
+		Addr:     cfg.Host,
+		Port:     cfg.Port,
+		Timeout:  cfg.Timeout,
+		Callback: ssh.InsecureIgnoreHostKey(),
+	})
 }

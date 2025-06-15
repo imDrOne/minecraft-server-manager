@@ -19,7 +19,7 @@ var (
 type SshdContainer struct {
 	testcontainers.Container
 	Host string
-	Port int
+	Port uint
 }
 
 func StartSshdContainer(ctx context.Context) (err error) {
@@ -61,7 +61,7 @@ func StartSshdContainer(ctx context.Context) (err error) {
 		sshdContainer.Store(SshdContainer{
 			Container: container,
 			Host:      host,
-			Port:      port.Int(),
+			Port:      uint(port.Int()),
 		})
 	})
 

@@ -1,12 +1,11 @@
 package ssh
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/imDrOne/minecraft-server-manager/internal/service/ssh/model"
 	"github.com/imDrOne/minecraft-server-manager/internal/service/ssh/scripts"
 	sshpkg "github.com/imDrOne/minecraft-server-manager/pkg/ssh"
-	"golang.org/x/crypto/ssh"
+	"github.com/melbahja/goph"
 	"strings"
 	"time"
 )
@@ -19,7 +18,7 @@ func NewSshService(timeout time.Duration) *Service {
 	return &Service{sshClientTimeout: timeout}
 }
 
-func (s *Service) newClient(cfg model.NodeSSHConnectionTO) (*ssh.Client, error) {
+func (s *Service) newClient(cfg model.NodeSSHConnectionTO) (*goph.Client, error) {
 	client, err := sshpkg.ProvideSshClient(sshpkg.ClientConfig{
 		Auth:    cfg.Auth,
 		Host:    cfg.Host,
@@ -40,22 +39,15 @@ func (s *Service) InjectPublicKey(cfg model.NodeSSHConnectionTO, publicKey strin
 	}
 	defer client.Close()
 
-	session, err := client.NewSession()
+	command, err := client.Command(scripts.InstallKeyScript)
 	if err != nil {
-		return fmt.Errorf("error on creating ssh session: %w", err)
+		return fmt.Errorf("error during preparing injecting key command: %w", err)
 	}
-	defer session.Close()
 
-	escapedKey := strings.ReplaceAll(publicKey, "'", "'\"'\"'")
-
-	var out bytes.Buffer
-	session.Stdout = &out
-	session.Stderr = &out
-	session.Stdin = strings.NewReader(escapedKey)
-
-	err = session.Run(scripts.InstallKeyScript)
+	command.Stdin = strings.NewReader(publicKey)
+	result, err := command.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("script failed: %v\n%s", err, out.String())
+		return fmt.Errorf("script failed with details %v: %w", string(result), err)
 	}
 
 	return nil
