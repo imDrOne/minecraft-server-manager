@@ -44,7 +44,7 @@ func provideSshConnectionConfig() model.NodeSSHConnectionTO {
 	sshdContainer := lib.GetSshdContainer()
 	return model.NodeSSHConnectionTO{
 		Host: sshdContainer.Host,
-		Port: int64(sshdContainer.Port),
+		Port: sshdContainer.Port,
 		User: "root",
 		Auth: sshpkg.Auth{
 			Type:     sshpkg.AuthPassword,
@@ -116,11 +116,8 @@ func (suite *ConnectionServiceTestSuite) TestConnectionService_InjectPublicKey_M
 				Timeout: time.Second * 10,
 			})
 			suite.NoError(err)
-			session, err := client.NewSession()
-			suite.NoError(err)
-			defer session.Close()
 
-			data, err := session.Output("cat ~/.ssh/authorized_keys")
+			data, err := client.Run("cat ~/.ssh/authorized_keys")
 			suite.NoError(err)
 			keys := parseAuthorizedKeys(data)
 			suite.Equal(tt.expectedKeyCount, len(keys))

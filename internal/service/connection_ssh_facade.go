@@ -102,7 +102,7 @@ func (r *ConnectionSshFacade) supplyNodeSshConnection(ctx context.Context, id in
 	return model.NodeSSHConnectionTO{
 		NodeId: connection.NodeId(),
 		Host:   node.Host(),
-		Port:   int64(node.Port()),
+		Port:   node.Port(),
 		User:   connection.User(),
 	}, err
 }

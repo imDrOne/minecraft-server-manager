@@ -2,6 +2,7 @@ package ssh
 
 import (
 	"fmt"
+	"github.com/melbahja/goph"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -20,16 +21,16 @@ type Auth struct {
 	PrivateKey []byte
 }
 
-func (a *Auth) ToSSHAuthMethod() (ssh.AuthMethod, error) {
+func (a *Auth) ToSSHAuthMethod() (goph.Auth, error) {
 	switch a.Type {
 	case AuthPassword:
-		return ssh.Password(a.Password), nil
+		return goph.Password(a.Password), nil
 	case AuthPrivateKey:
 		signer, err := ssh.ParsePrivateKey(a.PrivateKey)
 		if err != nil {
 			return nil, err
 		}
-		return ssh.PublicKeys(signer), nil
+		return goph.Auth{ssh.PublicKeys(signer)}, nil
 	default:
 		return nil, ErrUnknownAuthType
 	}

@@ -6,7 +6,7 @@ type NodeSSHConnectionTO struct {
 	NodeId int64
 	Auth   ssh.Auth
 	Host   string
-	Port   int64
+	Port   uint
 	User   string
 }
 
